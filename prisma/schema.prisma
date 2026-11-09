@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Person {
+  id         String   @id @db.Text
+  name       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  claimed    Boolean  @default(false)
+  claimToken String   @unique(map: "people_claim_token_key") @map("claim_token") @db.Text
+  major      String?  @db.Text
+  year       String?  @db.Text
+  residence  String?  @db.Text
+  hometown   String?  @db.Text
+  clubs      String[] @default([])
+
+  relationshipsAsA        Relationship[] @relation("RelationshipPersonA")
+  relationshipsAsB        Relationship[] @relation("RelationshipPersonB")
+  proposedRelationships   Relationship[] @relation("RelationshipProposer")
+
+  @@map("people")
+}
+
+model Relationship {
+  id                 String   @id @db.Text
+  personAId          String   @map("person_a_id") @db.Text
+  personBId          String   @map("person_b_id") @db.Text
+  category           Int      @db.SmallInt
+  proposedByPersonId String   @map("proposed_by_person_id") @db.Text
+  confirmed          Boolean  @default(false)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  personA    Person @relation("RelationshipPersonA", fields: [personAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  personB    Person @relation("RelationshipPersonB", fields: [personBId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  proposedBy Person @relation("RelationshipProposer", fields: [proposedByPersonId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([personAId], map: "relationships_person_a_id_idx")
+  @@index([personBId], map: "relationships_person_b_id_idx")
+  @@index([proposedByPersonId], map: "relationships_proposed_by_person_id_idx")
+  @@map("relationships")
+}
