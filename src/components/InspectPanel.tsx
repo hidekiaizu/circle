@@ -84,7 +84,7 @@ export default function InspectPanel({
   };
 
   return (
-    <aside className="absolute right-0 top-0 flex h-full w-80 flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur">
+    <aside className="absolute right-0 top-0 z-20 flex h-full w-full flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur sm:w-80">
       <div className="border-b border-white/10 px-5 py-4">
         <div className="flex items-start justify-between">
           <div className="flex min-w-0 items-center gap-3">
@@ -98,14 +98,14 @@ export default function InspectPanel({
               <h2 className="truncate text-xl font-semibold">{person.name}</h2>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close panel" className="ml-2 rounded-full p-1 text-slate-400 hover:bg-white/10 hover:text-white">✕</button>
+          <button onClick={onClose} aria-label="Close panel" className="ml-2 rounded-full p-2 text-lg leading-none text-slate-400 hover:bg-white/10 hover:text-white sm:p-1 sm:text-base">✕</button>
         </div>
         <p className="mt-3 text-sm text-slate-400">
           {neighbors.length} {neighbors.length === 1 ? "connection" : "connections"}
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
         {editing ? (
           <ProfileForm draft={draft} setDraft={setDraft} onSave={saveProfile} onCancel={() => setEditing(false)} />
         ) : (
@@ -162,7 +162,7 @@ export default function InspectPanel({
                           const value = Number(event.target.value);
                           if (isCategory(value)) updateRelationshipCategory(relationship.id, value);
                         }}
-                        className="min-w-0 flex-1 rounded bg-white/10 px-2 py-1 text-xs disabled:opacity-60"
+                        className="min-w-0 flex-1 rounded bg-white/10 px-2 py-1 text-base disabled:opacity-60 sm:text-xs"
                       >
                         {CATEGORY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                       </select>
@@ -262,7 +262,7 @@ function ProfileForm({
       {(["name", "major", "year", "residence", "hometown", "clubs"] as const).map((field) => (
         <label key={field} className="block text-xs capitalize text-slate-400">
           {field === "clubs" ? "Clubs (comma-separated)" : field}
-          <input value={draft[field]} onChange={(event) => setDraft((current) => ({ ...current, [field]: event.target.value }))} className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-sm text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500" />
+          <input value={draft[field]} onChange={(event) => setDraft((current) => ({ ...current, [field]: event.target.value }))} className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-base text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm" />
         </label>
       ))}
       <div className="flex gap-2">

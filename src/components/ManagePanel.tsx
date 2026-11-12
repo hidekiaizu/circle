@@ -31,26 +31,26 @@ export default function ManagePanel({
   };
 
   return (
-    <aside className="absolute left-0 top-0 flex h-full w-80 flex-col border-r border-white/10 bg-slate-950/95 backdrop-blur">
+    <aside className="absolute left-0 top-0 z-20 flex h-full w-full flex-col border-r border-white/10 bg-slate-950/95 backdrop-blur sm:w-80">
       <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
         <h2 className="text-lg font-semibold">Add a connection</h2>
         <button
           onClick={onClose}
           aria-label="Close panel"
-          className="rounded-full p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
+          className="rounded-full p-2 text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white sm:p-1 sm:text-base"
         >
           ✕
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-5">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5">
         <form onSubmit={submitPerson} className="space-y-4">
           <input
             autoFocus
             value={personName}
             onChange={(e) => setPersonName(e.target.value)}
             placeholder="Name"
-            className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm outline-none ring-1 ring-transparent focus:ring-indigo-500/60"
+            className="w-full rounded-lg bg-white/10 px-3 py-2 text-base outline-none ring-1 ring-transparent focus:ring-indigo-500/60 sm:text-sm"
           />
           <div>
             <p className="mb-2 text-xs text-slate-400">How well do you know them?</p>

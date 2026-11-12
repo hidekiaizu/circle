@@ -24,7 +24,7 @@ export default function Welcome({
         role="dialog"
         aria-modal="true"
         aria-labelledby="welcome-title"
-        className="max-h-[85vh] w-[32rem] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-7 shadow-2xl"
+        className="max-h-[85vh] w-full max-w-[32rem] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-7 shadow-2xl"
       >
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-indigo-400">
           Welcome to Circle

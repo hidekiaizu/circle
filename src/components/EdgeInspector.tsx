@@ -50,7 +50,7 @@ export default function EdgeInspector({
     claimedPersonId !== relationship.proposedByPersonId;
 
   return (
-    <aside className="absolute right-0 top-0 flex h-full w-80 flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur">
+    <aside className="absolute right-0 top-0 z-20 flex h-full w-full flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur sm:w-80">
       <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-indigo-400">
@@ -75,13 +75,13 @@ export default function EdgeInspector({
         <button
           onClick={onClose}
           aria-label="Close panel"
-          className="ml-2 rounded-full p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
+          className="ml-2 rounded-full p-2 text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white sm:p-1 sm:text-base"
         >
           ✕
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
         <p className="text-xs uppercase tracking-widest text-slate-500">
           Classification
         </p>
@@ -118,7 +118,7 @@ export default function EdgeInspector({
             const v = Number(e.target.value);
             if (isCategory(v)) updateRelationshipCategory(relationship.id, v);
           }}
-          className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-sm text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500/60"
+          className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-base text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500/60 sm:text-sm"
         >
           {CATEGORY_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>

@@ -472,7 +472,7 @@ export default function GraphExplorer() {
         </div>
 
         {!connectMode && (
-          <div className={`absolute top-4 left-4 z-10 ${manageOpen ? "hidden lg:block lg:left-[21rem]" : ""}`}>
+          <div className={`absolute top-4 left-4 z-10 ${manageOpen ? "hidden lg:block lg:left-[21rem]" : editorPerson || selectedPerson || selectedRelationship ? "hidden lg:block" : ""}`}>
             {focusedPerson ? (
               <div className="flex items-center gap-3 rounded-full border border-indigo-400/30 bg-slate-950/90 px-4 py-2 text-sm shadow-lg backdrop-blur">
                 <span className="max-w-64 truncate text-slate-200">
@@ -614,11 +614,11 @@ function CategoryPicker({
 }) {
   return (
     <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-black/50"
+      className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 p-4"
       onClick={onCancel}
     >
       <div
-        className="w-80 rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"
+        className="max-h-[85vh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-sm text-slate-400">

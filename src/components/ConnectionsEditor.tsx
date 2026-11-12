@@ -62,7 +62,7 @@ export default function ConnectionsEditor({
   if (claimedPersonId !== person.id) return null;
 
   return (
-    <aside className="absolute right-0 top-0 flex h-full w-96 flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur">
+    <aside className="absolute right-0 top-0 z-20 flex h-full w-full flex-col border-l border-white/10 bg-slate-950/95 backdrop-blur sm:w-[22rem] lg:w-96">
       <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-indigo-400">
@@ -76,13 +76,13 @@ export default function ConnectionsEditor({
         <button
           onClick={onClose}
           aria-label="Close panel"
-          className="rounded-full p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
+          className="rounded-full p-2 text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white sm:p-1 sm:text-base"
         >
           ✕
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-2 py-2">
         {data.people.length <= 1 ? (
           <p className="px-3 py-6 text-center text-sm text-slate-500">
             Add more people first, then connect them here.
@@ -110,7 +110,7 @@ export default function ConnectionsEditor({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="name…"
-                    className="w-24 rounded-md bg-white/10 px-2 py-1 text-xs text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60"
+                    className="w-24 rounded-md bg-white/10 px-2 py-1 text-base text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60 sm:text-xs"
                   />
                 </label>
               }

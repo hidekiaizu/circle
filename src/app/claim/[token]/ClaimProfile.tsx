@@ -35,7 +35,7 @@ export default function ClaimProfile({ token }: { token: string }) {
     const isCurrentProfile = claimedPersonId === person.id;
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-7 text-center shadow-2xl">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 text-center shadow-2xl sm:p-7">
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-indigo-400">
             Circle profile
           </p>
@@ -78,7 +78,7 @@ export default function ClaimProfile({ token }: { token: string }) {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-7 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl sm:p-7">
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-indigo-400">Circle invitation</p>
         <h1 className="mt-3 text-3xl font-semibold">Are you {person.name}?</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">

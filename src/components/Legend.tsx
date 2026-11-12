@@ -12,14 +12,14 @@ import { CATEGORY_OPTIONS } from "@/lib/types";
 export default function Legend({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center bg-black/60"
+      className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="legend-title"
-        className="max-h-[85vh] w-[28rem] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+        className="max-h-[85vh] w-full max-w-[28rem] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
@@ -29,7 +29,7 @@ export default function Legend({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full p-2 text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white sm:p-1 sm:text-base"
           >
             ✕
           </button>
