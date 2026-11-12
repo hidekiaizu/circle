@@ -1,4 +1,19 @@
+import type { GraphData } from "./types";
+
 const IDENTITY_KEY = "circle:claimed-person-id:v1";
+
+export function canRestoreClaimedPerson(
+  data: GraphData,
+  personId: string,
+  claimToken: string,
+): boolean {
+  return data.people.some(
+    (person) =>
+      person.id === personId &&
+      person.claimed &&
+      person.claimToken === claimToken,
+  );
+}
 
 export function readClaimedPersonId(): string | null {
   if (typeof window === "undefined") return null;

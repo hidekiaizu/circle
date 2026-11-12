@@ -26,6 +26,7 @@ import {
   updateRelationshipCategory,
 } from "./store-core";
 import {
+  canRestoreClaimedPerson,
   clearClaimedPersonId,
   readClaimedPersonId,
   saveClaimedPersonId,
@@ -50,6 +51,7 @@ export interface GraphStoreValue {
   removePerson: (personId: string) => void;
   setAttributes: (personId: string, attributes: PersonAttributes) => void;
   claimPerson: (personId: string, token: string) => Promise<boolean>;
+  restoreClaimedPerson: (personId: string, token: string) => boolean;
   addRelationship: (personAId: string, personBId: string, category: Category) => void;
   updateRelationshipCategory: (relationshipId: string, category: Category) => void;
   confirmRelationship: (relationshipId: string) => void;
@@ -252,6 +254,13 @@ export function GraphStoreProvider({ children }: { children: React.ReactNode }) 
       },
       [repository],
     ),
+    restoreClaimedPerson: useCallback((id, token) => {
+      if (!canRestoreClaimedPerson(dataRef.current, id, token)) return false;
+
+      saveClaimedPersonId(id);
+      setClaimedPersonId(id);
+      return true;
+    }, []),
     addRelationship: useCallback(
       (a, b, category) => {
         if (!claimedPersonId || !canConnectPair(claimedPersonId, a, b)) return;
