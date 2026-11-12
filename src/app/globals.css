@@ -9,6 +9,8 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  /* Stop iOS Safari rubber-band / scroll chaining while interacting with the graph. */
+  overscroll-behavior: none;
 }
 
 body {
@@ -17,6 +19,8 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Remove the grey tap flash on buttons/links on iOS. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
