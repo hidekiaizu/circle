@@ -57,7 +57,7 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
   };
 
   return (
-    <div className="relative w-56">
+    <div className="relative w-full sm:w-56">
       <label
         id={labelId}
         htmlFor={`${listId}-input`}
@@ -87,7 +87,7 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
           blurTimer.current = setTimeout(() => setOpen(false), 120);
         }}
         placeholder="Type a name…"
-        className="w-full rounded-full bg-white/10 px-4 py-1.5 text-sm text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60"
+        className="min-h-11 w-full rounded-full bg-white/10 px-4 py-1.5 text-base text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60 sm:min-h-0 sm:text-sm"
       />
       {open && matches.length > 0 && (
         <ul

@@ -318,7 +318,7 @@ export default function GraphExplorer() {
 
   return (
     <main className="flex h-screen flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-3">
+      <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-6">
         <div className="flex items-baseline gap-3">
           <h1 className="text-lg font-semibold tracking-tight">Circle</h1>
           <span className="text-sm text-slate-400" suppressHydrationWarning>
@@ -331,13 +331,13 @@ export default function GraphExplorer() {
               : "Loading…"}
           </span>
         </div>
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <SearchBox people={data.people} onPick={focusPerson} />
           <button
             onClick={() => setManageOpen((o) => !o)}
             disabled={!claimedPersonId}
             title={claimedPersonId ? "Add someone to your connections" : "Claim your profile first"}
-            className="rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-11 items-center rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0"
           >
             {manageOpen ? "Close" : "Add connection"}
           </button>
@@ -345,7 +345,7 @@ export default function GraphExplorer() {
             onClick={toggleConnectMode}
             disabled={!claimedPersonId}
             title={claimedPersonId ? "Connect yourself to someone" : "Claim your profile first"}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+            className={`inline-flex min-h-11 items-center rounded-full px-4 py-1.5 text-sm font-semibold transition sm:min-h-0 ${
               connectMode
                 ? "bg-emerald-500 text-white hover:bg-emerald-400"
                 : "bg-white/10 text-slate-200 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -399,7 +399,7 @@ export default function GraphExplorer() {
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-6 py-2 text-xs text-slate-400">
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2 text-xs text-slate-400 sm:px-6">
         <span className="font-medium text-slate-300">View</span>
         <FilterSelect label="Major" value={filters.major} options={attributeOptions(data.people, "major")} onChange={(major) => setFilters((current) => ({ ...current, major }))} />
         <FilterSelect label="Year" value={filters.year} options={attributeOptions(data.people, "year")} onChange={(year) => setFilters((current) => ({ ...current, year }))} />
@@ -409,9 +409,9 @@ export default function GraphExplorer() {
           <input type="range" min="0" max="1" step="0.05" value={filters.minStrength} onChange={(event) => setFilters((current) => ({ ...current, minStrength: Number(event.target.value) }))} className="w-20" />
           <span>{Math.round(filters.minStrength * 100)}%</span>
         </label>
-        <label className="ml-auto flex items-center gap-1">
+        <label className="flex items-center gap-1">
           Color by
-          <select value={colorBy} onChange={(event) => setColorBy(event.target.value as ColorBy)} className="rounded bg-white/10 px-2 py-1 text-slate-200">
+          <select value={colorBy} onChange={(event) => setColorBy(event.target.value as ColorBy)} className="min-h-11 rounded bg-white/10 px-2 py-1 text-base text-slate-200 sm:min-h-0 sm:text-xs">
             <option value="major">Major</option>
             <option value="year">Year</option>
             <option value="residence">Residence</option>
@@ -420,10 +420,10 @@ export default function GraphExplorer() {
         </label>
       </div>
 
-      {error && <div className="border-b border-rose-500/30 bg-rose-500/10 px-6 py-2 text-sm text-rose-200">Could not sync Circle: {error}</div>}
-      {loading && <div className="border-b border-indigo-500/20 bg-indigo-500/10 px-6 py-2 text-sm text-indigo-200">Loading the shared network…</div>}
+      {error && <div className="border-b border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm text-rose-200 sm:px-6">Could not sync Circle: {error}</div>}
+      {loading && <div className="border-b border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-200 sm:px-6">Loading the shared network…</div>}
       {!loading && !claimedPersonId && originatorToClaim && (
-        <div className="flex items-center justify-between gap-4 border-b border-indigo-400/30 bg-indigo-500/10 px-6 py-2 text-sm text-indigo-100">
+        <div className="flex flex-col gap-2 border-b border-indigo-400/30 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
           <span>This network starts with your profile, {originatorToClaim.name}.</span>
           <button
             onClick={() =>
@@ -431,7 +431,7 @@ export default function GraphExplorer() {
                 `/claim/${encodeURIComponent(originatorToClaim.claimToken)}`,
               )
             }
-            className="shrink-0 rounded-full bg-indigo-500 px-4 py-1.5 font-semibold text-white hover:bg-indigo-400"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-indigo-500 px-4 py-1.5 font-semibold text-white hover:bg-indigo-400 sm:min-h-0"
           >
             Claim your profile
           </button>
@@ -439,7 +439,7 @@ export default function GraphExplorer() {
       )}
 
       {connectMode && (
-        <div className="border-b border-emerald-500/30 bg-emerald-500/10 px-6 py-2 text-sm text-emerald-200">
+        <div className="border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 sm:px-6">
           {pendingSourceId
             ? `Click someone to add or update your connection with them. Click one of your lines to remove it.`
             : "Click someone to connect them to you."}
@@ -691,7 +691,7 @@ function FilterSelect({
         aria-label={`Filter by ${label}`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded bg-white/10 px-2 py-1 text-slate-200"
+        className="min-h-11 rounded bg-white/10 px-2 py-1 text-base text-slate-200 sm:min-h-0 sm:text-xs"
       >
         <option value="">All {label.toLowerCase()}s</option>
         {options.map((option) => (
