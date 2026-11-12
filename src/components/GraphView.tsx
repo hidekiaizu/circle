@@ -227,7 +227,7 @@ export default function GraphView({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full"
+      className="h-full w-full touch-none"
       role="application"
       aria-label="Social graph. Use the Search people field to find and focus a person with the keyboard."
     >
@@ -331,6 +331,17 @@ export default function GraphView({
             ctx.textBaseline = "top";
             ctx.fillStyle = dim ? NODE_LABEL_DIM_COLOR : NODE_LABEL_COLOR;
             ctx.fillText(n.name, n.x ?? 0, (n.y ?? 0) + 7);
+          }}
+          nodePointerAreaPaint={(node, color, ctx) => {
+            // Paint a larger hit region onto the offscreen pointer-detection
+            // canvas so fingertip taps near the radius-5 dot still register.
+            // The visible node (drawn in nodeCanvasObject) is unchanged.
+            const n = node as GraphNode;
+            if (focusIds && !focusIds.has(n.id)) return;
+            ctx.beginPath();
+            ctx.arc(n.x ?? 0, n.y ?? 0, 11, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
           }}
           onEngineStop={() => {
             const request = focusRequest?.nonce ?? null;
