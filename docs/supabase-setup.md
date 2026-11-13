@@ -1,59 +1,60 @@
-# Supabase setup
+# Invite-only database setup
 
-Circle currently uses an intentionally open, no-auth MVP data model. Anyone
-with the browser-safe publishable/anon key can read and mutate the graph. Do not
-store sensitive data, and replace these policies with authenticated ownership
-rules before a public launch.
+Circle's Next.js server reads and writes Postgres through `DATABASE_URL` or
+`DIRECT_URL`. Do not put either value in a `NEXT_PUBLIC_` variable. Anonymous
+browser clients have no table access after the invite-only migration.
 
-## Environment
+## Test without changing the live site
 
-Copy `.env.example` to `.env.local` and provide:
+The existing `.env.local` points to the live database. **Do not run the new
+migration with that connection for local testing.** The migration removes the
+open policies used by the deployed version, so applying it before deploying
+the new app would interrupt the live graph.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (preferred), or the legacy
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `DATABASE_URL`, or the supported local alias `DIRECT_URL`, using a direct or
-  session-pooler PostgreSQL connection suitable for migrations
-
-Never put a Supabase secret/service-role key in a `NEXT_PUBLIC_` variable.
-
-## Apply and seed
+Create a separate Supabase project or database clone, then set its direct
+Postgres connection in your local `.env.local`. Keep the live URL in a secure
+place; do not commit either URL. A fresh test database can be initialized with:
 
 ```bash
-npx prisma validate
-npx prisma generate
 npx prisma migrate deploy
 npm run seed
+npm run verify:db
 ```
 
-The seed is non-destructive. It creates the single unclaimed Hideki Aizu
-originator profile only when the graph is empty and leaves existing data alone.
+The seed creates Hideki Aizu only when the test graph is empty. Obtain the
+person ID from the test database, then issue the first private invitation:
 
-Run `npm run verify:db` to report the current counts and verify RLS and
-Realtime without assuming a particular graph size. To require an expected
-deployment state, set both
-`EXPECTED_PEOPLE` and `EXPECTED_RELATIONSHIPS` before `npm run verify:db`.
-
-Verify counts in Supabase SQL Editor:
-
-```sql
-select (select count(*) from public.people) as people,
-       (select count(*) from public.relationships) as relationships;
+```bash
+npm run invite:originator -- PERSON_ID
 ```
 
-The migration enables RLS, grants the `anon` and `authenticated` roles CRUD
-access through explicit open MVP policies, and adds both `public.people` and
-`public.relationships` to `supabase_realtime`. Verify publication membership:
+The command prints a seven-day link for `http://localhost:3000`. Open it,
+correct the name if needed, and set a username and password. Then sign out and
+sign back in at `/`. The first member can add connected people and generate
+their invitations from those nodes.
 
-```sql
-select schemaname, tablename
-from pg_publication_tables
-where pubname = 'supabase_realtime'
-  and tablename in ('people', 'relationships')
-order by tablename;
-```
+For a test clone containing existing people, use the exact ID of the intended
+owner. The command refuses to issue a new link to a node that already has an
+account. The migration rotates all old, publicly exposed claim tokens; old
+links stop working.
 
-If publication management is unavailable to the migration role, open Supabase
-Dashboard → Database → Publications → `supabase_realtime` and enable both
-tables. The client subscribes to Postgres Changes for inserts, updates, and
-deletes on each table.
+## Access model
+
+- Only holders of valid, unexpired invitation links can see a claim page and
+  create an account for that node.
+- The graph page and `/api/graph` require an authenticated session.
+- The server verifies that a profile edit belongs to the signed-in person and
+  that a relationship edit includes that person.
+- Anonymous and authenticated Supabase client roles have no direct table grants.
+- Passwords use salted scrypt hashes; sessions use random tokens stored as
+  hashes in Postgres and sent as HTTP-only cookies.
+- Invites expire in seven days. Generating another link invalidates the prior
+  one. Claiming a node invalidates its link.
+- Without email or phone, lost-password recovery requires manual verification
+  and an administrator-issued reset; the app does not currently offer an
+  automated reset.
+
+Production deployment must coordinate the migration and app release. Back up
+the live database and prepare an originator invitation first. The migration
+and new app must be switched together because the deployed open-access build
+cannot function once the old policies are revoked.

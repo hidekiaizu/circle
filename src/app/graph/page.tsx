@@ -1,8 +1,11 @@
 import { Suspense } from "react";
 import GraphExplorer from "@/components/GraphExplorer";
 import { GraphStoreProvider } from "@/lib/GraphStore";
+import { redirect } from "next/navigation";
+import { currentPersonId } from "@/lib/server/auth";
 
-export default function GraphPage() {
+export default async function GraphPage() {
+  if (!(await currentPersonId())) redirect("/");
   return (
     <GraphStoreProvider>
       {/* GraphExplorer reads the `person` query param via useSearchParams,

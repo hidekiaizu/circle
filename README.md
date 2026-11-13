@@ -2,8 +2,7 @@
 
 A shared, interactive map of CMU's social network. People claim invited
 profiles, describe the communities they belong to, and build mutually
-confirmed connections. Supabase stores and synchronizes the graph in real
-time across browsers.
+confirmed connections. The graph is private to invited members.
 
 ## Features
 
@@ -12,28 +11,28 @@ time across browsers.
   zoom, and drag nodes.
 - **Relationship categories**: Familiar, Acquaintance, Friend, Close Friend,
   Very Close Friend (1–5). Line thickness and opacity scale with strength.
-- **Hide weak ties**: Familiar connections are hidden by default and can be
-  revealed with a toggle.
-- **Claim links and ghost profiles**: every unclaimed node has a one-time invite
-  link and a visually distinct dashed treatment.
+- **Closeness filter**: Familiar connections are hidden by default. The
+  Filters sheet switches between All connections, Acquaintance or closer,
+  Friend or closer, and Close Friend or closer.
+- **Claim links and ghost profiles**: a member can issue a seven-day invite
+  link to an unclaimed connection, shown with a dashed treatment.
 - **Rich profiles**: major, class year, residence, hometown, and clubs are
-  visible; the locally claimed owner can edit their profile.
+  visible; the signed-in owner can edit their profile.
 - **Mutual confirmation**: proposed connections remain faint and dashed until
   the endpoint opposite the proposer confirms them.
 - **Filters and recommendations**: color by profile attributes, filter by
   major/year/residence/strength, and discover people through mutuals and shared
   attributes.
 - **Search & focus**: type-ahead search jumps to and centers a person.
-- **Shared persistence**: Supabase Postgres is the source of truth and Realtime
-  propagates inserts, updates, and deletes. `localStorage` holds only the
-  claimed browser identity and onboarding preference.
+- **Private persistence**: Postgres is the source of truth. Authenticated
+  server routes load and update the graph; the client refreshes periodically.
 
 ## Tech stack
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS
 - react-force-graph-2d (d3-force physics)
-- Supabase Postgres + Realtime
+- Supabase Postgres
 - Prisma ORM 7 for schema migrations and deterministic seeding
 
 ## Getting started
@@ -42,12 +41,13 @@ time across browsers.
 npm install
 npx prisma migrate deploy
 npm run seed
+npm run invite:originator -- PERSON_ID
 npm run dev
 ```
 
-Open http://localhost:3000 and click **Explore the graph**.
-See [docs/supabase-setup.md](docs/supabase-setup.md) for environment variables,
-the open MVP policies, Realtime verification, and count checks.
+Open the private invitation printed by the command, then choose a username
+and password. See [docs/supabase-setup.md](docs/supabase-setup.md) for safe
+testing with a separate database and production rollout notes.
 
 ## Scripts
 
@@ -60,8 +60,8 @@ the open MVP policies, Realtime verification, and count checks.
   when the graph is empty; existing data is never replaced
 - `npm run bootstrap:originator` — create the single unclaimed Hideki Aizu
   starting profile, but only when the people table is empty
-- `npm run verify:db` — report the current database counts and verify RLS
-  policies and Realtime, without assuming the demo seed is installed
+- `npm run invite:originator -- PERSON_ID` — issue the first private invitation
+- `npm run verify:db` — verify private table access and report graph counts
 - `EXPECTED_PEOPLE=… EXPECTED_RELATIONSHIPS=… npm run verify:db` — require a
   specific pair of counts for another deployment state
 
@@ -70,7 +70,7 @@ the open MVP policies, Realtime verification, and count checks.
 ```
 src/
   app/
-    page.tsx            Landing page
+    page.tsx            Sign-in page
     graph/page.tsx      Graph route (wraps the store provider)
     claim/[token]/      One-time profile claim route
     layout.tsx, globals.css
@@ -85,17 +85,18 @@ src/
     types.ts            Domain types + category constants
     graph.ts            Domain -> force-graph mapping, neighbor/mutual helpers
     store-core.ts       Pure graph operations + computeStrength
-    GraphStore.tsx      React context + optimistic Supabase synchronization
-    supabase/           row mapping, repository, Realtime reducer, client
+    GraphStore.tsx      React context + authenticated API synchronization
+    server/             database and session helpers
+    supabase/           legacy row mapping and repository tests
     selectors.ts        profile options, colors, filters
 prisma/
   schema.prisma         relational model
-  migrations/           constraints, MVP policies, Realtime publication
+  migrations/           schema and private-access policies
   seed.ts               non-destructive originator bootstrap
 ```
 
-## MVP security boundary
+## Testing note
 
-The current database policies deliberately allow anonymous reads and writes to
-support a no-auth prototype. Do not store sensitive information. Add Supabase
-Auth and owner-scoped RLS before public deployment.
+The local `.env.local` may still point to the live database. Do not apply the
+invite-only migration to it while the deployed app still uses the old schema.
+Use a separate database to test the entire claim and login flow first.

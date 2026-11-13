@@ -41,22 +41,14 @@ if ((expectedPeople === null) !== (expectedRelationships === null)) {
 }
 
 async function main() {
-  const [people, relationships, publications, policies, rls] = await Promise.all([
+  const [people, relationships, policies, rls, grants] = await Promise.all([
     prisma.person.count(),
     prisma.relationship.count(),
-    prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename
-      FROM pg_publication_tables
-      WHERE pubname = 'supabase_realtime'
-        AND schemaname = 'public'
-        AND tablename IN ('people', 'relationships')
-      ORDER BY tablename
-    `,
     prisma.$queryRaw<Array<{ tablename: string; policy_count: number }>>`
       SELECT tablename, count(*)::int AS policy_count
       FROM pg_policies
       WHERE schemaname = 'public'
-        AND tablename IN ('people', 'relationships')
+        AND tablename IN ('people', 'relationships', 'accounts', 'sessions')
       GROUP BY tablename
       ORDER BY tablename
     `,
@@ -64,13 +56,18 @@ async function main() {
       SELECT relname AS tablename, relrowsecurity AS enabled
       FROM pg_class
       WHERE relnamespace = 'public'::regnamespace
-        AND relname IN ('people', 'relationships')
+        AND relname IN ('people', 'relationships', 'accounts', 'sessions')
       ORDER BY relname
+    `,
+    prisma.$queryRaw<Array<{ table_name: string }>>`
+      SELECT DISTINCT table_name
+      FROM information_schema.role_table_grants
+      WHERE table_schema = 'public'
+        AND table_name IN ('people', 'relationships', 'accounts', 'sessions')
+        AND grantee IN ('anon', 'authenticated')
     `,
   ]);
 
-  const publicationNames = publications.map((row) => row.tablename);
-  const expectedTables = ["people", "relationships"];
   if (
     expectedPeople !== null &&
     expectedRelationships !== null &&
@@ -80,19 +77,18 @@ async function main() {
       `Unexpected counts: expected ${expectedPeople}/${expectedRelationships}, found ${people}/${relationships}.`,
     );
   }
-  if (JSON.stringify(publicationNames) !== JSON.stringify(expectedTables)) {
-    throw new Error(`Realtime publication is incomplete: ${publicationNames.join(", ")}.`);
+  if (policies.length !== 0) {
+    throw new Error("Direct client access policies must be removed.");
   }
-  if (policies.length !== 2 || policies.some((row) => row.policy_count !== 4)) {
-    throw new Error("Expected four MVP policies on each graph table.");
+  if (rls.length !== 4 || rls.some((row) => !row.enabled)) {
+    throw new Error("RLS is not enabled on all private tables.");
   }
-  if (rls.length !== 2 || rls.some((row) => !row.enabled)) {
-    throw new Error("RLS is not enabled on both graph tables.");
+  if (grants.length !== 0) {
+    throw new Error("Anonymous or authenticated client roles still have table grants.");
   }
 
   console.log(`Database verified: ${people} people, ${relationships} relationships.`);
-  console.log("Realtime verified: people, relationships.");
-  console.log("RLS verified: 4 policies on each table.");
+  console.log("Private access verified: no direct client policies or grants.");
 }
 
 main()

@@ -31,6 +31,7 @@ export type PersonMinAggregateOutputType = {
   updatedAt: Date | null
   claimed: boolean | null
   claimToken: string | null
+  claimTokenExpiresAt: Date | null
   major: string | null
   year: string | null
   residence: string | null
@@ -44,6 +45,7 @@ export type PersonMaxAggregateOutputType = {
   updatedAt: Date | null
   claimed: boolean | null
   claimToken: string | null
+  claimTokenExpiresAt: Date | null
   major: string | null
   year: string | null
   residence: string | null
@@ -57,6 +59,7 @@ export type PersonCountAggregateOutputType = {
   updatedAt: number
   claimed: number
   claimToken: number
+  claimTokenExpiresAt: number
   major: number
   year: number
   residence: number
@@ -73,6 +76,7 @@ export type PersonMinAggregateInputType = {
   updatedAt?: true
   claimed?: true
   claimToken?: true
+  claimTokenExpiresAt?: true
   major?: true
   year?: true
   residence?: true
@@ -86,6 +90,7 @@ export type PersonMaxAggregateInputType = {
   updatedAt?: true
   claimed?: true
   claimToken?: true
+  claimTokenExpiresAt?: true
   major?: true
   year?: true
   residence?: true
@@ -99,6 +104,7 @@ export type PersonCountAggregateInputType = {
   updatedAt?: true
   claimed?: true
   claimToken?: true
+  claimTokenExpiresAt?: true
   major?: true
   year?: true
   residence?: true
@@ -186,6 +192,7 @@ export type PersonGroupByOutputType = {
   updatedAt: Date
   claimed: boolean
   claimToken: string
+  claimTokenExpiresAt: Date | null
   major: string | null
   year: string | null
   residence: string | null
@@ -221,6 +228,7 @@ export type PersonWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Person"> | Date | string
   claimed?: Prisma.BoolFilter<"Person"> | boolean
   claimToken?: Prisma.StringFilter<"Person"> | string
+  claimTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Person"> | Date | string | null
   major?: Prisma.StringNullableFilter<"Person"> | string | null
   year?: Prisma.StringNullableFilter<"Person"> | string | null
   residence?: Prisma.StringNullableFilter<"Person"> | string | null
@@ -229,6 +237,8 @@ export type PersonWhereInput = {
   relationshipsAsA?: Prisma.RelationshipListRelationFilter
   relationshipsAsB?: Prisma.RelationshipListRelationFilter
   proposedRelationships?: Prisma.RelationshipListRelationFilter
+  account?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
+  sessions?: Prisma.SessionListRelationFilter
 }
 
 export type PersonOrderByWithRelationInput = {
@@ -238,6 +248,7 @@ export type PersonOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   claimed?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
+  claimTokenExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   major?: Prisma.SortOrderInput | Prisma.SortOrder
   year?: Prisma.SortOrderInput | Prisma.SortOrder
   residence?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -246,6 +257,8 @@ export type PersonOrderByWithRelationInput = {
   relationshipsAsA?: Prisma.RelationshipOrderByRelationAggregateInput
   relationshipsAsB?: Prisma.RelationshipOrderByRelationAggregateInput
   proposedRelationships?: Prisma.RelationshipOrderByRelationAggregateInput
+  account?: Prisma.AccountOrderByWithRelationInput
+  sessions?: Prisma.SessionOrderByRelationAggregateInput
 }
 
 export type PersonWhereUniqueInput = Prisma.AtLeast<{
@@ -258,6 +271,7 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Person"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Person"> | Date | string
   claimed?: Prisma.BoolFilter<"Person"> | boolean
+  claimTokenExpiresAt?: Prisma.DateTimeNullableFilter<"Person"> | Date | string | null
   major?: Prisma.StringNullableFilter<"Person"> | string | null
   year?: Prisma.StringNullableFilter<"Person"> | string | null
   residence?: Prisma.StringNullableFilter<"Person"> | string | null
@@ -266,6 +280,8 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<{
   relationshipsAsA?: Prisma.RelationshipListRelationFilter
   relationshipsAsB?: Prisma.RelationshipListRelationFilter
   proposedRelationships?: Prisma.RelationshipListRelationFilter
+  account?: Prisma.XOR<Prisma.AccountNullableScalarRelationFilter, Prisma.AccountWhereInput> | null
+  sessions?: Prisma.SessionListRelationFilter
 }, "id" | "claimToken">
 
 export type PersonOrderByWithAggregationInput = {
@@ -275,6 +291,7 @@ export type PersonOrderByWithAggregationInput = {
   updatedAt?: Prisma.SortOrder
   claimed?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
+  claimTokenExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   major?: Prisma.SortOrderInput | Prisma.SortOrder
   year?: Prisma.SortOrderInput | Prisma.SortOrder
   residence?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -295,6 +312,7 @@ export type PersonScalarWhereWithAggregatesInput = {
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Person"> | Date | string
   claimed?: Prisma.BoolWithAggregatesFilter<"Person"> | boolean
   claimToken?: Prisma.StringWithAggregatesFilter<"Person"> | string
+  claimTokenExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Person"> | Date | string | null
   major?: Prisma.StringNullableWithAggregatesFilter<"Person"> | string | null
   year?: Prisma.StringNullableWithAggregatesFilter<"Person"> | string | null
   residence?: Prisma.StringNullableWithAggregatesFilter<"Person"> | string | null
@@ -309,6 +327,7 @@ export type PersonCreateInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -317,6 +336,8 @@ export type PersonCreateInput = {
   relationshipsAsA?: Prisma.RelationshipCreateNestedManyWithoutPersonAInput
   relationshipsAsB?: Prisma.RelationshipCreateNestedManyWithoutPersonBInput
   proposedRelationships?: Prisma.RelationshipCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateInput = {
@@ -326,6 +347,7 @@ export type PersonUncheckedCreateInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -334,6 +356,8 @@ export type PersonUncheckedCreateInput = {
   relationshipsAsA?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonAInput
   relationshipsAsB?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonBInput
   proposedRelationships?: Prisma.RelationshipUncheckedCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountUncheckedCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUpdateInput = {
@@ -343,6 +367,7 @@ export type PersonUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -351,6 +376,8 @@ export type PersonUpdateInput = {
   relationshipsAsA?: Prisma.RelationshipUpdateManyWithoutPersonANestedInput
   relationshipsAsB?: Prisma.RelationshipUpdateManyWithoutPersonBNestedInput
   proposedRelationships?: Prisma.RelationshipUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateInput = {
@@ -360,6 +387,7 @@ export type PersonUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -368,6 +396,8 @@ export type PersonUncheckedUpdateInput = {
   relationshipsAsA?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonANestedInput
   relationshipsAsB?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonBNestedInput
   proposedRelationships?: Prisma.RelationshipUncheckedUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUncheckedUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonCreateManyInput = {
@@ -377,6 +407,7 @@ export type PersonCreateManyInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -391,6 +422,7 @@ export type PersonUpdateManyMutationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -405,6 +437,7 @@ export type PersonUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -427,6 +460,7 @@ export type PersonCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   claimed?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
+  claimTokenExpiresAt?: Prisma.SortOrder
   major?: Prisma.SortOrder
   year?: Prisma.SortOrder
   residence?: Prisma.SortOrder
@@ -441,6 +475,7 @@ export type PersonMaxOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   claimed?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
+  claimTokenExpiresAt?: Prisma.SortOrder
   major?: Prisma.SortOrder
   year?: Prisma.SortOrder
   residence?: Prisma.SortOrder
@@ -454,6 +489,7 @@ export type PersonMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   claimed?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
+  claimTokenExpiresAt?: Prisma.SortOrder
   major?: Prisma.SortOrder
   year?: Prisma.SortOrder
   residence?: Prisma.SortOrder
@@ -481,6 +517,10 @@ export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
@@ -488,6 +528,34 @@ export type NullableStringFieldUpdateOperationsInput = {
 export type PersonUpdateclubsInput = {
   set?: string[]
   push?: string | string[]
+}
+
+export type PersonCreateNestedOneWithoutAccountInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutAccountInput, Prisma.PersonUncheckedCreateWithoutAccountInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutAccountInput
+  connect?: Prisma.PersonWhereUniqueInput
+}
+
+export type PersonUpdateOneRequiredWithoutAccountNestedInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutAccountInput, Prisma.PersonUncheckedCreateWithoutAccountInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutAccountInput
+  upsert?: Prisma.PersonUpsertWithoutAccountInput
+  connect?: Prisma.PersonWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutAccountInput, Prisma.PersonUpdateWithoutAccountInput>, Prisma.PersonUncheckedUpdateWithoutAccountInput>
+}
+
+export type PersonCreateNestedOneWithoutSessionsInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutSessionsInput, Prisma.PersonUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutSessionsInput
+  connect?: Prisma.PersonWhereUniqueInput
+}
+
+export type PersonUpdateOneRequiredWithoutSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutSessionsInput, Prisma.PersonUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutSessionsInput
+  upsert?: Prisma.PersonUpsertWithoutSessionsInput
+  connect?: Prisma.PersonWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutSessionsInput, Prisma.PersonUpdateWithoutSessionsInput>, Prisma.PersonUncheckedUpdateWithoutSessionsInput>
 }
 
 export type PersonCreateNestedOneWithoutRelationshipsAsAInput = {
@@ -532,6 +600,190 @@ export type PersonUpdateOneRequiredWithoutProposedRelationshipsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutProposedRelationshipsInput, Prisma.PersonUpdateWithoutProposedRelationshipsInput>, Prisma.PersonUncheckedUpdateWithoutProposedRelationshipsInput>
 }
 
+export type PersonCreateWithoutAccountInput = {
+  id: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  claimed?: boolean
+  claimToken: string
+  claimTokenExpiresAt?: Date | string | null
+  major?: string | null
+  year?: string | null
+  residence?: string | null
+  hometown?: string | null
+  clubs?: Prisma.PersonCreateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipCreateNestedManyWithoutPersonAInput
+  relationshipsAsB?: Prisma.RelationshipCreateNestedManyWithoutPersonBInput
+  proposedRelationships?: Prisma.RelationshipCreateNestedManyWithoutProposedByInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutPersonInput
+}
+
+export type PersonUncheckedCreateWithoutAccountInput = {
+  id: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  claimed?: boolean
+  claimToken: string
+  claimTokenExpiresAt?: Date | string | null
+  major?: string | null
+  year?: string | null
+  residence?: string | null
+  hometown?: string | null
+  clubs?: Prisma.PersonCreateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonAInput
+  relationshipsAsB?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonBInput
+  proposedRelationships?: Prisma.RelationshipUncheckedCreateNestedManyWithoutProposedByInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutPersonInput
+}
+
+export type PersonCreateOrConnectWithoutAccountInput = {
+  where: Prisma.PersonWhereUniqueInput
+  create: Prisma.XOR<Prisma.PersonCreateWithoutAccountInput, Prisma.PersonUncheckedCreateWithoutAccountInput>
+}
+
+export type PersonUpsertWithoutAccountInput = {
+  update: Prisma.XOR<Prisma.PersonUpdateWithoutAccountInput, Prisma.PersonUncheckedUpdateWithoutAccountInput>
+  create: Prisma.XOR<Prisma.PersonCreateWithoutAccountInput, Prisma.PersonUncheckedCreateWithoutAccountInput>
+  where?: Prisma.PersonWhereInput
+}
+
+export type PersonUpdateToOneWithWhereWithoutAccountInput = {
+  where?: Prisma.PersonWhereInput
+  data: Prisma.XOR<Prisma.PersonUpdateWithoutAccountInput, Prisma.PersonUncheckedUpdateWithoutAccountInput>
+}
+
+export type PersonUpdateWithoutAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hometown?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clubs?: Prisma.PersonUpdateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUpdateManyWithoutPersonANestedInput
+  relationshipsAsB?: Prisma.RelationshipUpdateManyWithoutPersonBNestedInput
+  proposedRelationships?: Prisma.RelationshipUpdateManyWithoutProposedByNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutPersonNestedInput
+}
+
+export type PersonUncheckedUpdateWithoutAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hometown?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clubs?: Prisma.PersonUpdateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonANestedInput
+  relationshipsAsB?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonBNestedInput
+  proposedRelationships?: Prisma.RelationshipUncheckedUpdateManyWithoutProposedByNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutPersonNestedInput
+}
+
+export type PersonCreateWithoutSessionsInput = {
+  id: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  claimed?: boolean
+  claimToken: string
+  claimTokenExpiresAt?: Date | string | null
+  major?: string | null
+  year?: string | null
+  residence?: string | null
+  hometown?: string | null
+  clubs?: Prisma.PersonCreateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipCreateNestedManyWithoutPersonAInput
+  relationshipsAsB?: Prisma.RelationshipCreateNestedManyWithoutPersonBInput
+  proposedRelationships?: Prisma.RelationshipCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountCreateNestedOneWithoutPersonInput
+}
+
+export type PersonUncheckedCreateWithoutSessionsInput = {
+  id: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  claimed?: boolean
+  claimToken: string
+  claimTokenExpiresAt?: Date | string | null
+  major?: string | null
+  year?: string | null
+  residence?: string | null
+  hometown?: string | null
+  clubs?: Prisma.PersonCreateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonAInput
+  relationshipsAsB?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonBInput
+  proposedRelationships?: Prisma.RelationshipUncheckedCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountUncheckedCreateNestedOneWithoutPersonInput
+}
+
+export type PersonCreateOrConnectWithoutSessionsInput = {
+  where: Prisma.PersonWhereUniqueInput
+  create: Prisma.XOR<Prisma.PersonCreateWithoutSessionsInput, Prisma.PersonUncheckedCreateWithoutSessionsInput>
+}
+
+export type PersonUpsertWithoutSessionsInput = {
+  update: Prisma.XOR<Prisma.PersonUpdateWithoutSessionsInput, Prisma.PersonUncheckedUpdateWithoutSessionsInput>
+  create: Prisma.XOR<Prisma.PersonCreateWithoutSessionsInput, Prisma.PersonUncheckedCreateWithoutSessionsInput>
+  where?: Prisma.PersonWhereInput
+}
+
+export type PersonUpdateToOneWithWhereWithoutSessionsInput = {
+  where?: Prisma.PersonWhereInput
+  data: Prisma.XOR<Prisma.PersonUpdateWithoutSessionsInput, Prisma.PersonUncheckedUpdateWithoutSessionsInput>
+}
+
+export type PersonUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hometown?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clubs?: Prisma.PersonUpdateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUpdateManyWithoutPersonANestedInput
+  relationshipsAsB?: Prisma.RelationshipUpdateManyWithoutPersonBNestedInput
+  proposedRelationships?: Prisma.RelationshipUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUpdateOneWithoutPersonNestedInput
+}
+
+export type PersonUncheckedUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hometown?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clubs?: Prisma.PersonUpdateclubsInput | string[]
+  relationshipsAsA?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonANestedInput
+  relationshipsAsB?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonBNestedInput
+  proposedRelationships?: Prisma.RelationshipUncheckedUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUncheckedUpdateOneWithoutPersonNestedInput
+}
+
 export type PersonCreateWithoutRelationshipsAsAInput = {
   id: string
   name: string
@@ -539,6 +791,7 @@ export type PersonCreateWithoutRelationshipsAsAInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -546,6 +799,8 @@ export type PersonCreateWithoutRelationshipsAsAInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsB?: Prisma.RelationshipCreateNestedManyWithoutPersonBInput
   proposedRelationships?: Prisma.RelationshipCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateWithoutRelationshipsAsAInput = {
@@ -555,6 +810,7 @@ export type PersonUncheckedCreateWithoutRelationshipsAsAInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -562,6 +818,8 @@ export type PersonUncheckedCreateWithoutRelationshipsAsAInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsB?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonBInput
   proposedRelationships?: Prisma.RelationshipUncheckedCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountUncheckedCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonCreateOrConnectWithoutRelationshipsAsAInput = {
@@ -576,6 +834,7 @@ export type PersonCreateWithoutRelationshipsAsBInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -583,6 +842,8 @@ export type PersonCreateWithoutRelationshipsAsBInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipCreateNestedManyWithoutPersonAInput
   proposedRelationships?: Prisma.RelationshipCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateWithoutRelationshipsAsBInput = {
@@ -592,6 +853,7 @@ export type PersonUncheckedCreateWithoutRelationshipsAsBInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -599,6 +861,8 @@ export type PersonUncheckedCreateWithoutRelationshipsAsBInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonAInput
   proposedRelationships?: Prisma.RelationshipUncheckedCreateNestedManyWithoutProposedByInput
+  account?: Prisma.AccountUncheckedCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonCreateOrConnectWithoutRelationshipsAsBInput = {
@@ -613,6 +877,7 @@ export type PersonCreateWithoutProposedRelationshipsInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -620,6 +885,8 @@ export type PersonCreateWithoutProposedRelationshipsInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipCreateNestedManyWithoutPersonAInput
   relationshipsAsB?: Prisma.RelationshipCreateNestedManyWithoutPersonBInput
+  account?: Prisma.AccountCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateWithoutProposedRelationshipsInput = {
@@ -629,6 +896,7 @@ export type PersonUncheckedCreateWithoutProposedRelationshipsInput = {
   updatedAt?: Date | string
   claimed?: boolean
   claimToken: string
+  claimTokenExpiresAt?: Date | string | null
   major?: string | null
   year?: string | null
   residence?: string | null
@@ -636,6 +904,8 @@ export type PersonUncheckedCreateWithoutProposedRelationshipsInput = {
   clubs?: Prisma.PersonCreateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonAInput
   relationshipsAsB?: Prisma.RelationshipUncheckedCreateNestedManyWithoutPersonBInput
+  account?: Prisma.AccountUncheckedCreateNestedOneWithoutPersonInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonCreateOrConnectWithoutProposedRelationshipsInput = {
@@ -661,6 +931,7 @@ export type PersonUpdateWithoutRelationshipsAsAInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -668,6 +939,8 @@ export type PersonUpdateWithoutRelationshipsAsAInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsB?: Prisma.RelationshipUpdateManyWithoutPersonBNestedInput
   proposedRelationships?: Prisma.RelationshipUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateWithoutRelationshipsAsAInput = {
@@ -677,6 +950,7 @@ export type PersonUncheckedUpdateWithoutRelationshipsAsAInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -684,6 +958,8 @@ export type PersonUncheckedUpdateWithoutRelationshipsAsAInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsB?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonBNestedInput
   proposedRelationships?: Prisma.RelationshipUncheckedUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUncheckedUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUpsertWithoutRelationshipsAsBInput = {
@@ -704,6 +980,7 @@ export type PersonUpdateWithoutRelationshipsAsBInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -711,6 +988,8 @@ export type PersonUpdateWithoutRelationshipsAsBInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUpdateManyWithoutPersonANestedInput
   proposedRelationships?: Prisma.RelationshipUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateWithoutRelationshipsAsBInput = {
@@ -720,6 +999,7 @@ export type PersonUncheckedUpdateWithoutRelationshipsAsBInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -727,6 +1007,8 @@ export type PersonUncheckedUpdateWithoutRelationshipsAsBInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonANestedInput
   proposedRelationships?: Prisma.RelationshipUncheckedUpdateManyWithoutProposedByNestedInput
+  account?: Prisma.AccountUncheckedUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUpsertWithoutProposedRelationshipsInput = {
@@ -747,6 +1029,7 @@ export type PersonUpdateWithoutProposedRelationshipsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -754,6 +1037,8 @@ export type PersonUpdateWithoutProposedRelationshipsInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUpdateManyWithoutPersonANestedInput
   relationshipsAsB?: Prisma.RelationshipUpdateManyWithoutPersonBNestedInput
+  account?: Prisma.AccountUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateWithoutProposedRelationshipsInput = {
@@ -763,6 +1048,7 @@ export type PersonUncheckedUpdateWithoutProposedRelationshipsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   claimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   claimToken?: Prisma.StringFieldUpdateOperationsInput | string
+  claimTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   major?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   year?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   residence?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -770,6 +1056,8 @@ export type PersonUncheckedUpdateWithoutProposedRelationshipsInput = {
   clubs?: Prisma.PersonUpdateclubsInput | string[]
   relationshipsAsA?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonANestedInput
   relationshipsAsB?: Prisma.RelationshipUncheckedUpdateManyWithoutPersonBNestedInput
+  account?: Prisma.AccountUncheckedUpdateOneWithoutPersonNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 
@@ -781,12 +1069,14 @@ export type PersonCountOutputType = {
   relationshipsAsA: number
   relationshipsAsB: number
   proposedRelationships: number
+  sessions: number
 }
 
 export type PersonCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   relationshipsAsA?: boolean | PersonCountOutputTypeCountRelationshipsAsAArgs
   relationshipsAsB?: boolean | PersonCountOutputTypeCountRelationshipsAsBArgs
   proposedRelationships?: boolean | PersonCountOutputTypeCountProposedRelationshipsArgs
+  sessions?: boolean | PersonCountOutputTypeCountSessionsArgs
 }
 
 /**
@@ -820,6 +1110,13 @@ export type PersonCountOutputTypeCountProposedRelationshipsArgs<ExtArgs extends 
   where?: Prisma.RelationshipWhereInput
 }
 
+/**
+ * PersonCountOutputType without action
+ */
+export type PersonCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SessionWhereInput
+}
+
 
 export type PersonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -828,6 +1125,7 @@ export type PersonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   updatedAt?: boolean
   claimed?: boolean
   claimToken?: boolean
+  claimTokenExpiresAt?: boolean
   major?: boolean
   year?: boolean
   residence?: boolean
@@ -836,6 +1134,8 @@ export type PersonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   relationshipsAsA?: boolean | Prisma.Person$relationshipsAsAArgs<ExtArgs>
   relationshipsAsB?: boolean | Prisma.Person$relationshipsAsBArgs<ExtArgs>
   proposedRelationships?: boolean | Prisma.Person$proposedRelationshipsArgs<ExtArgs>
+  account?: boolean | Prisma.Person$accountArgs<ExtArgs>
+  sessions?: boolean | Prisma.Person$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["person"]>
 
@@ -846,6 +1146,7 @@ export type PersonSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   updatedAt?: boolean
   claimed?: boolean
   claimToken?: boolean
+  claimTokenExpiresAt?: boolean
   major?: boolean
   year?: boolean
   residence?: boolean
@@ -860,6 +1161,7 @@ export type PersonSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   updatedAt?: boolean
   claimed?: boolean
   claimToken?: boolean
+  claimTokenExpiresAt?: boolean
   major?: boolean
   year?: boolean
   residence?: boolean
@@ -874,6 +1176,7 @@ export type PersonSelectScalar = {
   updatedAt?: boolean
   claimed?: boolean
   claimToken?: boolean
+  claimTokenExpiresAt?: boolean
   major?: boolean
   year?: boolean
   residence?: boolean
@@ -881,11 +1184,13 @@ export type PersonSelectScalar = {
   clubs?: boolean
 }
 
-export type PersonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "createdAt" | "updatedAt" | "claimed" | "claimToken" | "major" | "year" | "residence" | "hometown" | "clubs", ExtArgs["result"]["person"]>
+export type PersonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "createdAt" | "updatedAt" | "claimed" | "claimToken" | "claimTokenExpiresAt" | "major" | "year" | "residence" | "hometown" | "clubs", ExtArgs["result"]["person"]>
 export type PersonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   relationshipsAsA?: boolean | Prisma.Person$relationshipsAsAArgs<ExtArgs>
   relationshipsAsB?: boolean | Prisma.Person$relationshipsAsBArgs<ExtArgs>
   proposedRelationships?: boolean | Prisma.Person$proposedRelationshipsArgs<ExtArgs>
+  account?: boolean | Prisma.Person$accountArgs<ExtArgs>
+  sessions?: boolean | Prisma.Person$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PersonIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -897,6 +1202,8 @@ export type $PersonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     relationshipsAsA: Prisma.$RelationshipPayload<ExtArgs>[]
     relationshipsAsB: Prisma.$RelationshipPayload<ExtArgs>[]
     proposedRelationships: Prisma.$RelationshipPayload<ExtArgs>[]
+    account: Prisma.$AccountPayload<ExtArgs> | null
+    sessions: Prisma.$SessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -905,6 +1212,7 @@ export type $PersonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     updatedAt: Date
     claimed: boolean
     claimToken: string
+    claimTokenExpiresAt: Date | null
     major: string | null
     year: string | null
     residence: string | null
@@ -1307,6 +1615,8 @@ export interface Prisma__PersonClient<T, Null = never, ExtArgs extends runtime.T
   relationshipsAsA<T extends Prisma.Person$relationshipsAsAArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$relationshipsAsAArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   relationshipsAsB<T extends Prisma.Person$relationshipsAsBArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$relationshipsAsBArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   proposedRelationships<T extends Prisma.Person$proposedRelationshipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$proposedRelationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  account<T extends Prisma.Person$accountArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$accountArgs<ExtArgs>>): Prisma.Prisma__AccountClient<runtime.Types.Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  sessions<T extends Prisma.Person$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1342,6 +1652,7 @@ export interface PersonFieldRefs {
   readonly updatedAt: Prisma.FieldRef<"Person", 'DateTime'>
   readonly claimed: Prisma.FieldRef<"Person", 'Boolean'>
   readonly claimToken: Prisma.FieldRef<"Person", 'String'>
+  readonly claimTokenExpiresAt: Prisma.FieldRef<"Person", 'DateTime'>
   readonly major: Prisma.FieldRef<"Person", 'String'>
   readonly year: Prisma.FieldRef<"Person", 'String'>
   readonly residence: Prisma.FieldRef<"Person", 'String'>
@@ -1809,6 +2120,49 @@ export type Person$proposedRelationshipsArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.RelationshipScalarFieldEnum | Prisma.RelationshipScalarFieldEnum[]
+}
+
+/**
+ * Person.account
+ */
+export type Person$accountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Account
+   */
+  select?: Prisma.AccountSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Account
+   */
+  omit?: Prisma.AccountOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AccountInclude<ExtArgs> | null
+  where?: Prisma.AccountWhereInput
+}
+
+/**
+ * Person.sessions
+ */
+export type Person$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Session
+   */
+  select?: Prisma.SessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Session
+   */
+  omit?: Prisma.SessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SessionInclude<ExtArgs> | null
+  where?: Prisma.SessionWhereInput
+  orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[]
+  cursor?: Prisma.SessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SessionScalarFieldEnum | Prisma.SessionScalarFieldEnum[]
 }
 
 /**

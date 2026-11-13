@@ -14,7 +14,6 @@ import {
   addConnectedPerson as applyConnectedPerson,
   addPerson,
   addRelationship,
-  claimPerson as applyClaim,
   confirmRelationship as applyConfirmation,
   emptyGraph,
   makeId,
@@ -26,18 +25,11 @@ import {
   updateRelationshipCategory,
 } from "./store-core";
 import {
-  canRestoreClaimedPerson,
-  clearClaimedPersonId,
-  readClaimedPersonId,
-  saveClaimedPersonId,
-} from "./identity";
-import {
   canConnectPair,
   canEditProfile,
   canEditRelationship,
 } from "./permissions";
-import { GraphRepository } from "./supabase/repository";
-import { reduceRealtimeGraph } from "./supabase/realtime";
+import { GraphApiRepository } from "./GraphApiRepository";
 
 export interface GraphStoreValue {
   data: GraphData;
@@ -50,8 +42,6 @@ export interface GraphStoreValue {
   renamePerson: (personId: string, name: string) => void;
   removePerson: (personId: string) => void;
   setAttributes: (personId: string, attributes: PersonAttributes) => void;
-  claimPerson: (personId: string, token: string) => Promise<boolean>;
-  restoreClaimedPerson: (personId: string, token: string) => boolean;
   addRelationship: (personAId: string, personBId: string, category: Category) => void;
   updateRelationshipCategory: (relationshipId: string, category: Category) => void;
   confirmRelationship: (relationshipId: string) => void;
@@ -63,7 +53,7 @@ export interface GraphStoreValue {
 const GraphStoreContext = createContext<GraphStoreValue | null>(null);
 
 export function GraphStoreProvider({ children }: { children: React.ReactNode }) {
-  const repository = useMemo(() => new GraphRepository(), []);
+  const repository = useMemo(() => new GraphApiRepository(), []);
   const [data, setData] = useState<GraphData>(emptyGraph);
   const dataRef = useRef(data);
   const [loading, setLoading] = useState(true);
@@ -77,15 +67,11 @@ export function GraphStoreProvider({ children }: { children: React.ReactNode }) 
   const reload = useCallback(async () => {
     try {
       setError(null);
-      const graph = await repository.load();
-      const storedPersonId = readClaimedPersonId();
-      const validPersonId = graph.people.some(
-        (person) => person.id === storedPersonId && person.claimed,
-      )
-        ? storedPersonId
-        : null;
-      if (!validPersonId && storedPersonId) clearClaimedPersonId();
-      setClaimedPersonId(validPersonId);
+      const [graph, session] = await Promise.all([
+        repository.load(),
+        fetch("/api/auth/session", { cache: "no-store" }).then(r => r.json() as Promise<{ personId: string | null }>),
+      ]);
+      setClaimedPersonId(session.personId);
       dataRef.current = graph;
       setData(graph);
     } catch (cause) {
@@ -99,16 +85,10 @@ export function GraphStoreProvider({ children }: { children: React.ReactNode }) 
     const initialLoad = window.setTimeout(() => {
       void reload();
     }, 0);
-    const unsubscribe = repository.subscribe((event) => {
-      setData((current) => {
-        const next = reduceRealtimeGraph(current, event);
-        dataRef.current = next;
-        return next;
-      });
-    });
+    const interval = window.setInterval(() => { void reload(); }, 15_000);
     return () => {
       window.clearTimeout(initialLoad);
-      unsubscribe();
+      window.clearInterval(interval);
     };
   }, [reload, repository]);
 
@@ -232,35 +212,6 @@ export function GraphStoreProvider({ children }: { children: React.ReactNode }) 
       },
       [claimedPersonId, optimistic, repository],
     ),
-    claimPerson: useCallback(
-      async (id, token) => {
-        const before = dataRef.current;
-        const next = applyClaim(before, id, token);
-        if (next === before) return false;
-        dataRef.current = next;
-        setData(next);
-        try {
-          const claimed = await repository.claimPerson(id, token);
-          if (!claimed) throw new Error("This claim link has already been used.");
-          saveClaimedPersonId(id);
-          setClaimedPersonId(id);
-          return true;
-        } catch (cause) {
-          dataRef.current = before;
-          setData(before);
-          setError(cause instanceof Error ? cause.message : "Claim failed.");
-          return false;
-        }
-      },
-      [repository],
-    ),
-    restoreClaimedPerson: useCallback((id, token) => {
-      if (!canRestoreClaimedPerson(dataRef.current, id, token)) return false;
-
-      saveClaimedPersonId(id);
-      setClaimedPersonId(id);
-      return true;
-    }, []),
     addRelationship: useCallback(
       (a, b, category) => {
         if (!claimedPersonId || !canConnectPair(claimedPersonId, a, b)) return;

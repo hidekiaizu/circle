@@ -9,5 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Person'
+export type * from './models/Account'
+export type * from './models/Session'
 export type * from './models/Relationship'
 export type * from './commonInputTypes'

@@ -14,6 +14,7 @@ model Person {
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   claimed    Boolean  @default(false)
   claimToken String   @unique(map: "people_claim_token_key") @map("claim_token") @db.Text
+  claimTokenExpiresAt DateTime? @map("claim_token_expires_at") @db.Timestamptz(3)
   major      String?  @db.Text
   year       String?  @db.Text
   residence  String?  @db.Text
@@ -23,8 +24,34 @@ model Person {
   relationshipsAsA        Relationship[] @relation("RelationshipPersonA")
   relationshipsAsB        Relationship[] @relation("RelationshipPersonB")
   proposedRelationships   Relationship[] @relation("RelationshipProposer")
+  account Account?
+  sessions Session[]
 
   @@map("people")
+}
+
+model Account {
+  id String @id @default(uuid()) @db.Uuid
+  personId String @unique @map("person_id") @db.Text
+  username String @unique @db.Text
+  passwordHash String @map("password_hash") @db.Text
+  failedLogins Int @default(0) @map("failed_logins")
+  lockedUntil DateTime? @map("locked_until") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Session {
+  tokenHash String @id @map("token_hash") @db.Text
+  personId String @map("person_id") @db.Text
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@map("sessions")
 }
 
 model Relationship {
