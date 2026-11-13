@@ -15,6 +15,13 @@ import {
   type GraphLink,
   type GraphNode,
 } from "@/lib/graph";
+import {
+  fitView,
+  hitRadius,
+  nearestDistance,
+  nodeRadius,
+  shouldShowLabel,
+} from "@/lib/graph-view";
 
 interface GraphViewProps {
   data: ForceGraphData;
@@ -96,8 +103,16 @@ export default function GraphView({
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  // Latest measured canvas size. Delayed frames read this instead of the
+  // size captured by the render that scheduled them, so a frame that lands
+  // after chrome or a banner changed the canvas height uses the new height.
+  const sizeRef = useRef({ width: 0, height: 0 });
+  // True once the user has zoomed, panned or tapped the canvas since the last
+  // programmatic frame. While false, height changes reframe the view.
+  const viewTouchedRef = useRef(false);
   // Initial framing is a one-time event. Later simulation stops (including
   // category edits) must not override a person's focus or manual zoom.
+  // Only set once a frame actually happened (not on an empty graph).
   const settledRef = useRef(false);
   const lastSettledFrameRef = useRef<{
     request: number | null;
@@ -116,6 +131,7 @@ export default function GraphView({
       raf = requestAnimationFrame(() => {
         const w = el.clientWidth;
         const h = el.clientHeight;
+        sizeRef.current = { width: w, height: h };
         setSize((prev) =>
           prev.width === w && prev.height === h ? prev : { width: w, height: h },
         );
@@ -125,9 +141,18 @@ export default function GraphView({
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    // Capture phase: d3-zoom stops propagation of the canvas events it uses.
+    const markTouched = () => {
+      viewTouchedRef.current = true;
+    };
+    const listenerOptions = { capture: true, passive: true } as const;
+    el.addEventListener("pointerdown", markTouched, listenerOptions);
+    el.addEventListener("wheel", markTouched, listenerOptions);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      el.removeEventListener("pointerdown", markTouched, listenerOptions);
+      el.removeEventListener("wheel", markTouched, listenerOptions);
     };
   }, []);
 
@@ -145,32 +170,54 @@ export default function GraphView({
     () => (activeFocusId ? focusNodeIds(activeFocusId, graphData) : null),
     [activeFocusId, graphData],
   );
+  // Nodes that can be tapped, used to keep neighboring hit areas apart.
+  const hitNodes = useMemo(
+    () =>
+      focusIds
+        ? graphData.nodes.filter((node) => focusIds.has(node.id))
+        : graphData.nodes,
+    [focusIds, graphData.nodes],
+  );
 
+  const radius = nodeRadius(size.width);
+
+  /** Fits the visible nodes. Returns false when there was nothing to frame. */
   const frameView = useCallback(
-    (durationMs = 450) => {
+    (durationMs = 450): boolean => {
       const fg = fgRef.current;
-      if (!fg || size.width === 0 || size.height === 0) return;
+      const { width, height } = sizeRef.current;
+      if (!fg || width === 0 || height === 0) return false;
       const bounds = fg.getGraphBbox(
         focusIds ? (node) => focusIds.has(node.id) : undefined,
       );
-      if (!bounds) return;
+      if (!bounds) return false;
       const [left, right] = bounds.x;
       const [top, bottom] = bounds.y;
-      if (![left, right, top, bottom].every(Number.isFinite)) return;
-      const spanX = Math.max(right - left, 1);
-      const spanY = Math.max(bottom - top, 1);
-      const zoom = Math.max(
-        0.1,
-        Math.min(
-          3.6,
-          (size.width - 100) / spanX,
-          (size.height - 100) / spanY,
-        ),
-      );
-      fg.centerAt((left + right) / 2, (top + bottom) / 2, durationMs);
-      fg.zoom(zoom, durationMs);
+      if (![left, right, top, bottom].every(Number.isFinite)) return false;
+      const labels: { x: number; chars: number }[] = [];
+      for (const node of graphData.nodes) {
+        if (focusIds && !focusIds.has(node.id)) continue;
+        if (node.x == null) continue;
+        labels.push({ x: node.x, chars: node.name.length });
+      }
+      // Reserve room for the names drawn below nodes so labels near the left
+      // and right edges are not clipped by the canvas edge.
+      const view = fitView({
+        left,
+        right,
+        top,
+        bottom,
+        width,
+        height,
+        labels,
+        radius: nodeRadius(width),
+      });
+      fg.centerAt(view.x, view.y, durationMs);
+      fg.zoom(view.zoom, durationMs);
+      viewTouchedRef.current = false;
+      return true;
     },
-    [focusIds, size.width, size.height],
+    [focusIds, graphData.nodes],
   );
 
   // The highlight set: selected node + its direct neighbors (over visible links).
@@ -214,15 +261,38 @@ export default function GraphView({
     fg.d3ReheatSimulation();
   }, [graphData]);
 
-  // Explicit focus/fit requests and canvas resizes reframe the visible view.
-  // Data edits do not trigger the old whole-map zoom-out. A focused view is
-  // framed once more on engine stop if its neighbors move during the edit.
+  // Explicit focus/fit requests reframe the visible view. Data edits do not
+  // trigger the old whole-map zoom-out. A focused view is framed once more on
+  // engine stop if its neighbors move during the edit.
   useEffect(() => {
     if (!settledRef.current && !focusRequest && fitRequest === 0) return;
     const t = setTimeout(() => frameView(), 60);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusRequest, fitRequest, size.width, size.height]);
+  }, [focusRequest, fitRequest]);
+
+  // Width changes (rotation, desktop side panels) reframe. Height-only
+  // changes do not once the user has zoomed, panned or tapped the map: on
+  // phones they come from the header and bottom bar hiding while a sheet is
+  // open, the mobile search row, or the browser toolbar, and reframing there
+  // would throw away the user's view. force-graph already keeps the view
+  // centered when the canvas height changes.
+  useEffect(() => {
+    if (!settledRef.current) return;
+    const t = setTimeout(() => frameView(), 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size.width]);
+
+  // While the view still shows the last programmatic frame (nothing for the
+  // user to lose), a height change refits it to the new canvas, e.g. when the
+  // Welcome card is dismissed or the connect-mode banner mounts.
+  useEffect(() => {
+    if (!settledRef.current || viewTouchedRef.current) return;
+    const t = setTimeout(() => frameView(), 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size.height]);
 
   return (
     <div
@@ -245,7 +315,7 @@ export default function GraphView({
             (focusIds.has(endpointId(link.source)) &&
               focusIds.has(endpointId(link.target)))
           }
-          nodeRelSize={5}
+          nodeRelSize={radius}
           nodeColor={(node) => {
             const id = (node as GraphNode).id;
             if (connectMode && id === pendingSourceId)
@@ -302,8 +372,31 @@ export default function GraphView({
                   : n.claimed
                     ? n.color
                     : "#475569";
+            const x = n.x ?? 0;
+            const y = n.y ?? 0;
+            const anchor = n.id === activeFocusId;
+            if (selected || pending) {
+              // Outer glow ring so the selected person stands out on a phone.
+              ctx.beginPath();
+              ctx.arc(x, y, radius + 3.5, 0, Math.PI * 2);
+              ctx.fillStyle = pending
+                ? "rgba(52, 211, 153, 0.22)"
+                : "rgba(240, 171, 252, 0.22)";
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+              ctx.strokeStyle = pending ? NODE_PENDING_COLOR : NODE_SELECTED_COLOR;
+              ctx.lineWidth = Math.max(1, 1.5 / globalScale);
+              ctx.stroke();
+            } else if (anchor) {
+              ctx.beginPath();
+              ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+              ctx.strokeStyle = "rgba(165, 180, 252, 0.8)";
+              ctx.lineWidth = Math.max(0.8, 1.2 / globalScale);
+              ctx.stroke();
+            }
             ctx.beginPath();
-            ctx.arc(n.x ?? 0, n.y ?? 0, 5, 0, Math.PI * 2);
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = fill;
             ctx.fill();
             if (!n.claimed) {
@@ -320,26 +413,44 @@ export default function GraphView({
               .map((part) => part[0])
               .join("")
               .toUpperCase();
-            ctx.font = `bold ${Math.max(3.2, 5 / globalScale)}px ui-sans-serif, system-ui, sans-serif`;
+            ctx.font = `bold ${Math.max(3.2, radius / globalScale)}px ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = "#0b0f1a";
-            ctx.fillText(initials, n.x ?? 0, n.y ?? 0.2);
-            const fontSize = Math.max(12 / globalScale, 2.5);
-            ctx.font = `${fontSize}px ui-sans-serif, system-ui, sans-serif`;
+            ctx.fillText(initials, x, y + 0.2);
+            const showLabel = shouldShowLabel({
+              globalScale,
+              isSelected: selected || pending,
+              isHighlighted: !!highlightNodeIds?.has(n.id),
+              isFocusContext: anchor || (!!focusIds && focusIds.has(n.id)),
+              nodeCount: graphData.nodes.length,
+            });
+            if (!showLabel) return;
+            const emphasized = selected || anchor;
+            const fontSize = Math.max((emphasized ? 13 : 12) / globalScale, 2.5);
+            ctx.font = `${emphasized ? "600 " : ""}${fontSize}px ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
             ctx.fillStyle = dim ? NODE_LABEL_DIM_COLOR : NODE_LABEL_COLOR;
-            ctx.fillText(n.name, n.x ?? 0, (n.y ?? 0) + 7);
+            ctx.fillText(n.name, x, y + radius + (emphasized ? 4 : 2));
           }}
-          nodePointerAreaPaint={(node, color, ctx) => {
+          nodePointerAreaPaint={(node, color, ctx, globalScale) => {
             // Paint a larger hit region onto the offscreen pointer-detection
-            // canvas so fingertip taps near the radius-5 dot still register.
-            // The visible node (drawn in nodeCanvasObject) is unchanged.
+            // canvas. Its radius is in screen px (about a 44px tap target at
+            // any zoom), capped at half the gap to the nearest visible node
+            // so close neighbors do not steal each other's taps.
             const n = node as GraphNode;
             if (focusIds && !focusIds.has(n.id)) return;
+            const x = n.x ?? 0;
+            const y = n.y ?? 0;
+            const nearest = nearestDistance(
+              n.id,
+              x,
+              y,
+              hitNodes,
+            );
             ctx.beginPath();
-            ctx.arc(n.x ?? 0, n.y ?? 0, 11, 0, Math.PI * 2);
+            ctx.arc(x, y, hitRadius(globalScale, 22, radius, nearest), 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.fill();
           }}
@@ -349,7 +460,12 @@ export default function GraphView({
               !!focusIds &&
               (lastSettledFrameRef.current?.request !== request ||
                 lastSettledFrameRef.current?.graphData !== graphData);
-            if (!settledRef.current || needsFocusFrame) frameView(350);
+            if (!settledRef.current || needsFocusFrame) {
+              // The engine also settles on the empty graph while the API is
+              // still loading. Nothing is framed then, so stay unsettled and
+              // let the loaded graph get its first fit on the next stop.
+              if (!frameView(350)) return;
+            }
             settledRef.current = true;
             lastSettledFrameRef.current = { request, graphData };
           }}

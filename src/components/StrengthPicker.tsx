@@ -58,7 +58,7 @@ export default function StrengthPicker({
               onFocus={() => setHint(o.value)}
               onBlur={() => setHint(null)}
               onClick={() => onChange(active ? null : o.value)}
-              className={`px-3 py-2 text-[11px] font-medium transition sm:px-2 sm:py-1 ${
+              className={`min-h-11 px-3 py-2 text-[11px] font-medium transition sm:min-h-0 sm:px-2 sm:py-1 ${
                 active
                   ? "bg-indigo-500 text-white"
                   : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"

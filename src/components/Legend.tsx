@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useEscapeToClose } from "@/lib/escape-stack";
 import { linkWidth } from "@/lib/graph";
 import { strengthFromCategory } from "@/lib/strength";
 import { CATEGORY_OPTIONS } from "@/lib/types";
@@ -10,32 +12,42 @@ import { CATEGORY_OPTIONS } from "@/lib/types";
  * classifications are consistent.
  */
 export default function Legend({ onClose }: { onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the close control on open and dismiss on Escape.
+  useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true });
+  }, []);
+  useEscapeToClose(onClose);
+
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="legend-title"
-        className="max-h-[85vh] w-full max-w-[28rem] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+        className="flex max-h-[85dvh] w-full max-w-[28rem] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 py-2 pr-2 pl-6">
           <h2 id="legend-title" className="text-lg font-semibold">
             How to read the graph
           </h2>
           <button
+            ref={closeRef}
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-2 text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white sm:p-1 sm:text-base"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white"
           >
             ✕
           </button>
         </div>
 
-        <dl className="mt-4 space-y-4 text-sm">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-6">
+        <dl className="space-y-4 text-sm">
           <div className="flex gap-3">
             <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-400" />
             <div>
@@ -137,9 +149,11 @@ export default function Legend({ onClose }: { onClose: () => void }) {
         </ul>
 
         <p className="mt-5 text-xs text-slate-500">
-          Tip: click a person to highlight their connections, or use
-          &ldquo;Hide weak ties&rdquo; to declutter.
+          Tip: tap a person to highlight their connections and list each of
+          their relationships. To declutter, open Filters and pick a
+          Connections option such as &ldquo;Friend or closer&rdquo;.
         </p>
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,13 @@ import type { Person } from "@/lib/types";
 interface SearchBoxProps {
   people: Person[];
   onPick: (id: string) => void;
+  /** Focus the input on mount (used when search is revealed on mobile). */
+  autoFocus?: boolean;
+  /** Called on Escape when no result list is open (collapses mobile search). */
+  onDismiss?: () => void;
+  /** Visually hide the "Search people" label (it stays for screen readers). */
+  hideLabel?: boolean;
+  className?: string;
 }
 
 /**
@@ -13,11 +20,20 @@ interface SearchBoxProps {
  * the graph itself is a canvas (not focusable DOM nodes), this doubles as the
  * keyboard path to any node: search, arrow to a result, Enter to focus it.
  */
-export default function SearchBox({ people, onPick }: SearchBoxProps) {
+export default function SearchBox({
+  people,
+  onPick,
+  autoFocus = false,
+  onDismiss,
+  hideLabel = false,
+  className = "w-full sm:w-56",
+}: SearchBoxProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const justFocused = useRef(false);
   const labelId = useId();
   const listId = useId();
 
@@ -32,6 +48,14 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
     setQuery(person.name);
     setOpen(false);
     setActiveIndex(-1);
+  };
+
+  const clear = () => {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    setQuery("");
+    setActiveIndex(-1);
+    setOpen(false);
+    inputRef.current?.focus();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -51,22 +75,36 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
         pick(matches[activeIndex]);
       }
     } else if (e.key === "Escape") {
-      setOpen(false);
-      setActiveIndex(-1);
+      if (open && matches.length > 0) {
+        // Claim Escape so an open panel behind the search stays open.
+        e.preventDefault();
+        setOpen(false);
+        setActiveIndex(-1);
+      } else {
+        setOpen(false);
+        setActiveIndex(-1);
+        if (onDismiss) {
+          e.preventDefault();
+          onDismiss();
+        }
+      }
     }
   };
 
   return (
-    <div className="relative w-full sm:w-56">
+    <div className={`relative ${className}`}>
       <label
         id={labelId}
         htmlFor={`${listId}-input`}
-        className="mb-1 block text-xs font-medium text-slate-400"
+        className={hideLabel ? "sr-only" : "mb-1 block text-xs font-medium text-slate-400"}
       >
         Search people
       </label>
+      <div className="relative">
       <input
+        ref={inputRef}
         id={`${listId}-input`}
+        autoFocus={autoFocus}
         role="combobox"
         aria-expanded={open && matches.length > 0}
         aria-controls={listId}
@@ -81,20 +119,52 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
           setOpen(true);
           setActiveIndex(-1);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => {
+          // Select the previous person's name so typing replaces it. A
+          // click or tap collapses a selection made during focus on the
+          // following mouseup/touchend, so select again after the pointer
+          // sequence and cancel the first mouseup's caret placement.
+          const input = e.currentTarget;
+          input.select();
+          window.setTimeout(() => {
+            if (document.activeElement === input) input.select();
+          }, 0);
+          setOpen(true);
+        }}
+        onMouseDown={(e) => {
+          // Only the click that focuses the field keeps the selection.
+          justFocused.current = document.activeElement !== e.currentTarget;
+        }}
+        onMouseUp={(e) => {
+          if (!justFocused.current) return;
+          justFocused.current = false;
+          e.preventDefault();
+        }}
         onKeyDown={onKeyDown}
         onBlur={() => {
           blurTimer.current = setTimeout(() => setOpen(false), 120);
         }}
         placeholder="Type a name…"
-        className="min-h-11 w-full rounded-full bg-white/10 px-4 py-1.5 text-base text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60 sm:min-h-0 sm:text-sm"
+        className={`min-h-11 w-full rounded-full bg-white/10 py-1.5 pl-4 text-base text-slate-100 outline-none ring-1 ring-transparent placeholder:text-slate-500 focus:ring-indigo-500/60 sm:min-h-0 sm:text-sm ${query ? "pr-11 sm:pr-9" : "pr-4"}`}
       />
+      {query && (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clear}
+          aria-label="Clear search"
+          className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center rounded-full text-lg leading-none text-slate-400 hover:text-white sm:w-9"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      )}
+      </div>
       {open && matches.length > 0 && (
         <ul
           id={listId}
           role="listbox"
           aria-labelledby={labelId}
-          className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-slate-900 shadow-xl"
+          className="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-slate-900 shadow-xl"
         >
           {matches.map((p, i) => (
             <li
@@ -112,7 +182,7 @@ export default function SearchBox({ people, onPick }: SearchBoxProps) {
                   if (blurTimer.current) clearTimeout(blurTimer.current);
                   pick(p);
                 }}
-                className={`block w-full px-4 py-2 text-left text-sm ${
+                className={`block min-h-11 w-full px-4 py-2 text-left text-base sm:min-h-0 sm:text-sm ${
                   i === activeIndex ? "bg-white/10" : "hover:bg-white/10"
                 }`}
               >

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEscapeToClose } from "@/lib/escape-stack";
 import GraphCanvas from "./GraphCanvas";
 import InspectPanel from "./InspectPanel";
 import ManagePanel from "./ManagePanel";
@@ -11,10 +12,13 @@ import Legend from "./Legend";
 import EdgeInspector from "./EdgeInspector";
 import OverflowMenu from "./OverflowMenu";
 import Welcome from "./Welcome";
+import FilterSheet from "./FilterSheet";
 import { toForceGraphData, type ForceGraphData } from "@/lib/graph";
 import { findRelationship } from "@/lib/store-core";
 import {
-  attributeOptions,
+  activeFilterChips,
+  clearChipFilters,
+  clearFilter,
   EMPTY_FILTERS,
   filterGraphData,
   type ColorBy,
@@ -82,9 +86,11 @@ export default function GraphExplorer() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const [hideWeak, setHideWeak] = useState(true);
   const [colorBy, setColorBy] = useState<ColorBy>("major");
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  // Mobile-only collapsible search under the compact header.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [fitRequest, setFitRequest] = useState(0);
@@ -109,6 +115,14 @@ export default function GraphExplorer() {
     aId: string;
     bId: string;
   } | null>(null);
+  // Explains how unclaimed visitors claim a profile before adding connections.
+  const [claimInfoOpen, setClaimInfoOpen] = useState(false);
+
+  // Familiar ties stay in the filtered data but are hidden on the canvas
+  // unless the Connections filter is "All connections".
+  const hideWeak = filters.minCategory > CATEGORY.Familiar;
+  const filterChips = activeFilterChips(filters);
+  const filterCount = filterChips.length;
 
   const filteredData = useMemo(() => filterGraphData(data, filters), [data, filters]);
   const visualSource = useMemo(() => ({ data: filteredData, colorBy }), [filteredData, colorBy]);
@@ -143,8 +157,6 @@ export default function GraphExplorer() {
     () => data.people.find((p) => p.id === selectedId) ?? null,
     [data.people, selectedId],
   );
-  const originatorToClaim =
-    data.people.length === 1 && !data.people[0].claimed ? data.people[0] : null;
 
   const focusedPerson = data.people.find((person) => person.id === focusedId);
   const focusedVisibleConnections = focusedPerson
@@ -180,12 +192,14 @@ export default function GraphExplorer() {
     setSelectedId(id);
     setSelectedLinkId(null);
     if (id) {
+      setSearchOpen(false);
       setFocusedId(id);
       setFocusRequest({ id, nonce: Date.now() });
     }
   }, []);
 
   const focusPerson = useCallback((id: string) => {
+    setSearchOpen(false);
     setSelectedId(id);
     setSelectedLinkId(null);
     setFocusedId(id);
@@ -199,6 +213,39 @@ export default function GraphExplorer() {
     setSelectedLinkId(null);
     setFitRequest((request) => request + 1);
   }, []);
+
+  // Mobile bottom bar "Explore": back to the whole map with nothing open.
+  const explore = useCallback(() => {
+    setSearchOpen(false);
+    setFilterSheetOpen(false);
+    setManageOpen(false);
+    setEditorPersonId(null);
+    setConnectMode(false);
+    setConnectPair(null);
+    setClaimInfoOpen(false);
+    showAll();
+  }, [showAll]);
+
+  const openAddConnection = useCallback(() => {
+    if (!claimedPersonId) return;
+    setSearchOpen(false);
+    setFilterSheetOpen(false);
+    setConnectMode(false);
+    setConnectPair(null);
+    setManageOpen(true);
+  }, [claimedPersonId]);
+
+  const openClaimInfo = useCallback(() => {
+    setSearchOpen(false);
+    setFilterSheetOpen(false);
+    setClaimInfoOpen(true);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/");
+    router.refresh();
+  }, [router]);
 
   // Opening the connections editor for a brand-new or existing person.
   const openEditorFor = useCallback((id: string) => {
@@ -316,137 +363,204 @@ export default function GraphExplorer() {
       null)
     : null;
 
+  const editorOpen = !!editorPerson && editorPerson.id === claimedPersonId;
+  // Below lg, any open panel, sheet, or dialog takes over the viewport, so the
+  // normal header, filter chips, search, and bottom bar step aside.
+  const mobileSurfaceOpen =
+    manageOpen ||
+    editorOpen ||
+    !!selectedPerson ||
+    !!selectedRelationship ||
+    filterSheetOpen ||
+    legendOpen ||
+    (hydrated && welcomeOpen) ||
+    claimInfoOpen ||
+    !!connectPair;
+  const filtersLabel = filterCount > 0 ? `Filters · ${filterCount}` : "Filters";
+
   return (
-    <main className="flex h-screen flex-col">
-      <header className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-6">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">Circle</h1>
-          <span className="text-sm text-slate-400" suppressHydrationWarning>
-            {hydrated
-              ? `${pluralize(forceData.nodes.length, "person", "people")} · ${pluralize(
-                  visibleLinks,
-                  "connection",
-                  "connections",
-                )}`
-              : "Loading…"}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <SearchBox people={data.people} onPick={focusPerson} />
-          <button
-            onClick={() => setManageOpen((o) => !o)}
-            disabled={!claimedPersonId}
-            title={claimedPersonId ? "Add someone to your connections" : "Claim your profile first"}
-            className="inline-flex min-h-11 items-center rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0"
-          >
-            {manageOpen ? "Close" : "Add connection"}
-          </button>
-          <button
-            onClick={toggleConnectMode}
-            disabled={!claimedPersonId}
-            title={claimedPersonId ? "Connect yourself to someone" : "Claim your profile first"}
-            className={`inline-flex min-h-11 items-center rounded-full px-4 py-1.5 text-sm font-semibold transition sm:min-h-0 ${
-              connectMode
-                ? "bg-emerald-500 text-white hover:bg-emerald-400"
-                : "bg-white/10 text-slate-200 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-            }`}
-          >
-            {connectMode ? "Connecting…" : "Connect"}
-          </button>
-          <OverflowMenu>
-            {(close) => (
-              <>
-                <button
-                  role="menuitem"
-                  onClick={() => setHideWeak((v) => !v)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
-                >
-                  Hide weak ties
-                  <span
-                    className={`ml-3 inline-flex h-4 w-4 items-center justify-center rounded border ${
-                      hideWeak
-                        ? "border-indigo-400 bg-indigo-500 text-white"
-                        : "border-white/20"
-                    }`}
-                    aria-hidden
-                  >
-                    {hideWeak ? "✓" : ""}
+    <main className="graph-shell flex h-dvh flex-col overflow-hidden">
+      <header
+        className={`${mobileSurfaceOpen ? "hidden lg:block" : "block"} shrink-0 border-b border-white/10 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]`}
+      >
+        <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:h-auto lg:gap-4 lg:py-3">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h1 className="text-lg font-semibold tracking-tight">Circle</h1>
+            <span className="truncate text-sm text-slate-400" suppressHydrationWarning>
+              {hydrated ? (
+                <>
+                  <span className="lg:hidden">
+                    {pluralize(forceData.nodes.length, "person", "people")}
                   </span>
-                </button>
+                  <span className="hidden lg:inline">
+                    {`${pluralize(forceData.nodes.length, "person", "people")} · ${pluralize(
+                      visibleLinks,
+                      "connection",
+                      "connections",
+                    )}`}
+                  </span>
+                </>
+              ) : (
+                "Loading…"
+              )}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 lg:items-end lg:gap-3">
+            <div className="hidden lg:block">
+              <SearchBox people={data.people} onPick={focusPerson} />
+            </div>
+            <button
+              onClick={() => setFilterSheetOpen((open) => !open)}
+              aria-haspopup="dialog"
+              aria-expanded={filterSheetOpen}
+              className={`hidden items-center rounded-full px-4 py-1.5 text-sm font-semibold transition lg:inline-flex ${
+                filterCount > 0 || filterSheetOpen
+                  ? "bg-indigo-500/20 text-indigo-100 hover:bg-indigo-500/30"
+                  : "bg-white/10 text-slate-200 hover:bg-white/20"
+              }`}
+            >
+              {filtersLabel}
+            </button>
+            {hydrated &&
+              (claimedPersonId ? (
                 <button
-                  role="menuitem"
-                  onClick={() => {
-                    setLegendOpen(true);
-                    close();
-                  }}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                  onClick={() =>
+                    manageOpen ? setManageOpen(false) : openAddConnection()
+                  }
+                  aria-haspopup="dialog"
+                  aria-expanded={manageOpen}
+                  className="hidden items-center rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 lg:inline-flex"
                 >
-                  How to read the graph
+                  + Add connection
                 </button>
+              ) : (
                 <button
-                  role="menuitem"
-                  onClick={() => {
-                    setWelcomeOpen(true);
-                    close();
-                  }}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                  onClick={openClaimInfo}
+                  aria-haspopup="dialog"
+                  className="hidden items-center rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 lg:inline-flex"
                 >
-                  Show intro
+                  Claim your profile to add connections
                 </button>
-              </>
-            )}
-          </OverflowMenu>
+              ))}
+            <button
+              onClick={signOut}
+              className="hidden rounded-full bg-white/10 px-3 py-1.5 text-sm text-slate-200 hover:bg-white/20 lg:inline-flex"
+            >
+              Sign out
+            </button>
+            <OverflowMenu>
+              {(close) => (
+                <>
+                  {claimedPersonId && (
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        toggleConnectMode();
+                        close();
+                      }}
+                      className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10 lg:min-h-0"
+                    >
+                      {connectMode ? "Stop connecting" : "Connect on the map"}
+                    </button>
+                  )}
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setLegendOpen(true);
+                      close();
+                    }}
+                    className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10 lg:min-h-0"
+                  >
+                    How to read the graph
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setWelcomeOpen(true);
+                      close();
+                    }}
+                    className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10 lg:min-h-0"
+                  >
+                    Show intro
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      close();
+                      void signOut();
+                    }}
+                    className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10 lg:hidden"
+                  >
+                    Sign out
+                  </button>
+                </>
+              )}
+            </OverflowMenu>
+          </div>
         </div>
+        {searchOpen && (
+          <div className="px-4 pb-3 sm:px-6 lg:hidden">
+            <SearchBox
+              people={data.people}
+              onPick={focusPerson}
+              onDismiss={() => setSearchOpen(false)}
+              autoFocus
+              hideLabel
+              className="w-full"
+            />
+          </div>
+        )}
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2 text-xs text-slate-400 sm:px-6">
-        <span className="font-medium text-slate-300">View</span>
-        <FilterSelect label="Major" value={filters.major} options={attributeOptions(data.people, "major")} onChange={(major) => setFilters((current) => ({ ...current, major }))} />
-        <FilterSelect label="Year" value={filters.year} options={attributeOptions(data.people, "year")} onChange={(year) => setFilters((current) => ({ ...current, year }))} />
-        <FilterSelect label="Residence" value={filters.residence} options={attributeOptions(data.people, "residence")} onChange={(residence) => setFilters((current) => ({ ...current, residence }))} />
-        <label className="flex items-center gap-1 rounded-full bg-white/5 px-2 py-1">
-          Strength
-          <input type="range" min="0" max="1" step="0.05" value={filters.minStrength} onChange={(event) => setFilters((current) => ({ ...current, minStrength: Number(event.target.value) }))} className="w-20" />
-          <span>{Math.round(filters.minStrength * 100)}%</span>
-        </label>
-        <label className="flex items-center gap-1">
-          Color by
-          <select value={colorBy} onChange={(event) => setColorBy(event.target.value as ColorBy)} className="min-h-11 rounded bg-white/10 px-2 py-1 text-base text-slate-200 sm:min-h-0 sm:text-xs">
-            <option value="major">Major</option>
-            <option value="year">Year</option>
-            <option value="residence">Residence</option>
-            <option value="claimed">Claim status</option>
-          </select>
-        </label>
-      </div>
+      {filterCount > 0 && (
+        <div
+          aria-label="Active filters"
+          className={`${mobileSurfaceOpen ? "hidden lg:flex" : "flex"} no-scrollbar shrink-0 items-center gap-2 overflow-x-auto border-b border-white/10 px-4 py-1 sm:px-6 lg:py-2`}
+        >
+          {filterChips.map((chip) => (
+            <button
+              key={chip.key}
+              onClick={() => setFilters((current) => clearFilter(current, chip.key))}
+              aria-label={`Remove filter: ${chip.label}`}
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-indigo-400/30 bg-indigo-500/15 pr-3 pl-4 text-sm text-indigo-100 transition hover:bg-indigo-500/25 lg:min-h-8"
+            >
+              {chip.label}
+              <span aria-hidden className="text-base leading-none text-indigo-300">
+                ×
+              </span>
+            </button>
+          ))}
+          {filterCount > 1 && (
+            <button
+              onClick={() => setFilters(clearChipFilters)}
+              className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium text-slate-400 transition hover:text-white lg:min-h-8"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <div className="border-b border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm text-rose-200 sm:px-6">Could not sync Circle: {error}</div>}
       {loading && <div className="border-b border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-200 sm:px-6">Loading the shared network…</div>}
-      {!loading && !claimedPersonId && originatorToClaim && (
-        <div className="flex flex-col gap-2 border-b border-indigo-400/30 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
-          <span>This network starts with your profile, {originatorToClaim.name}.</span>
+
+      {connectMode && (
+        <div className="flex shrink-0 items-center gap-3 border-b border-emerald-500/30 bg-emerald-500/10 py-1 pr-2 pl-4 text-sm text-emerald-200 sm:pl-6">
+          <p className="min-w-0 flex-1">
+            {pendingSourceId
+              ? "Tap someone to add or update your connection with them. Tap one of your lines to remove it."
+              : "Tap someone to connect them to you."}
+          </p>
           <button
-            onClick={() =>
-              router.push(
-                `/claim/${encodeURIComponent(originatorToClaim.claimToken)}`,
-              )
-            }
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-indigo-500 px-4 py-1.5 font-semibold text-white hover:bg-indigo-400 sm:min-h-0"
+            onClick={toggleConnectMode}
+            className="min-h-11 shrink-0 rounded-full bg-emerald-500 px-4 text-sm font-semibold text-white transition hover:bg-emerald-400 lg:min-h-8"
           >
-            Claim your profile
+            Done
           </button>
         </div>
       )}
 
-      {connectMode && (
-        <div className="border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 sm:px-6">
-          {pendingSourceId
-            ? `Click someone to add or update your connection with them. Click one of your lines to remove it.`
-            : "Click someone to connect them to you."}
-        </div>
-      )}
-
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         <div
           className={`h-full ${manageOpen ? "lg:ml-80" : ""} ${
             editorPerson
@@ -472,25 +586,34 @@ export default function GraphExplorer() {
         </div>
 
         {!connectMode && (
-          <div className={`absolute top-4 left-4 z-10 ${manageOpen ? "hidden lg:block lg:left-[21rem]" : editorPerson || selectedPerson || selectedRelationship ? "hidden lg:block" : ""}`}>
+          <div className={`absolute top-3 left-[max(0.75rem,env(safe-area-inset-left))] z-10 lg:top-4 lg:left-4 ${mobileSurfaceOpen ? "hidden lg:block" : ""} ${manageOpen ? "lg:left-[21rem]" : ""}`}>
             {focusedPerson ? (
-              <div className="flex items-center gap-3 rounded-full border border-indigo-400/30 bg-slate-950/90 px-4 py-2 text-sm shadow-lg backdrop-blur">
-                <span className="max-w-64 truncate text-slate-200">
-                  Focus: {focusedPerson.name} · {focusedVisibleConnections} ties
+              <div className="flex max-w-[70vw] items-center rounded-full border border-indigo-400/30 bg-slate-950/90 pl-4 text-sm shadow-lg backdrop-blur sm:max-w-80">
+                <span
+                  className="min-w-0 truncate text-slate-200"
+                  title={`${focusedPerson.name} · ${focusedVisibleConnections} ${focusedVisibleConnections === 1 ? "tie" : "ties"}`}
+                >
+                  {focusedPerson.name} · {focusedVisibleConnections}
                 </span>
                 <button
                   onClick={showAll}
-                  className="shrink-0 font-semibold text-indigo-300 hover:text-indigo-200"
+                  aria-label="Show all people"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none text-indigo-300 hover:text-indigo-100"
                 >
-                  Show all
+                  <span aria-hidden="true">×</span>
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setFitRequest((request) => request + 1)}
-                className="rounded-full border border-white/10 bg-slate-950/90 px-4 py-2 text-sm font-medium text-slate-300 shadow-lg backdrop-blur hover:text-white"
+                aria-label="Fit map"
+                title="Fit map"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 shadow-lg backdrop-blur hover:text-white lg:h-auto lg:w-auto lg:px-4 lg:py-2"
               >
-                Fit map
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5 lg:hidden">
+                  <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="hidden text-sm font-medium lg:inline">Fit map</span>
               </button>
             )}
           </div>
@@ -499,7 +622,12 @@ export default function GraphExplorer() {
         {manageOpen && (
           <ManagePanel
             onClose={() => setManageOpen(false)}
+            onChanged={notify}
             onPersonAdded={(id) => {
+              setManageOpen(false);
+              focusPerson(id);
+            }}
+            onPersonConnected={(id) => {
               setManageOpen(false);
               focusPerson(id);
             }}
@@ -549,11 +677,27 @@ export default function GraphExplorer() {
             );
           })()}
 
-        {/* Confirmation toast */}
+        {/* Confirmation toast: above the mobile bottom bar / sheet footers and
+            the home indicator on phones, inside the graph region at lg. */}
         {toast && (
-          <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-4 rounded-full border border-white/10 bg-slate-900/95 px-5 py-2.5 shadow-2xl backdrop-blur">
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-full border border-white/10 bg-slate-900/95 px-5 py-2.5 text-center shadow-2xl backdrop-blur lg:absolute lg:bottom-6 lg:z-30"
+          >
             <span className="text-sm text-slate-200">{toast}</span>
           </div>
+        )}
+
+        {filterSheetOpen && (
+          <FilterSheet
+            people={data.people}
+            filters={filters}
+            onFiltersChange={setFilters}
+            colorBy={colorBy}
+            onColorByChange={setColorBy}
+            onClose={() => setFilterSheetOpen(false)}
+          />
         )}
 
         {/* Connect-mode category picker */}
@@ -581,21 +725,235 @@ export default function GraphExplorer() {
         {hydrated && welcomeOpen && (
           <Welcome
             claimed={claimedPersonId !== null}
-            hasOriginatorToClaim={originatorToClaim !== null}
             onStart={() => {
               dismissWelcome();
-              if (claimedPersonId) focusPerson(claimedPersonId);
-              else if (originatorToClaim)
-                router.push(
-                  `/claim/${encodeURIComponent(originatorToClaim.claimToken)}`,
-                );
-              else setManageOpen(true);
+              if (claimedPersonId) openAddConnection();
+              else openClaimInfo();
+            }}
+            onShowLegend={() => {
+              dismissWelcome();
+              setLegendOpen(true);
             }}
             onClose={dismissWelcome}
           />
         )}
+
+        {claimInfoOpen && <ClaimInfo onClose={() => setClaimInfoOpen(false)} />}
       </div>
+
+      {/* Mobile bottom bar: the last flex child, so it never covers the graph. */}
+      <nav
+        aria-label="Graph actions"
+        className={`${mobileSurfaceOpen ? "hidden" : "grid"} shrink-0 grid-cols-4 border-t border-white/10 bg-slate-950 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] lg:hidden`}
+      >
+        <BarButton label="Explore" onClick={explore} icon={<ExploreIcon />} />
+        <BarButton
+          label="Search"
+          onClick={() => {
+            setFilterSheetOpen(false);
+            setSearchOpen((open) => !open);
+          }}
+          pressed={searchOpen}
+          icon={<SearchIcon />}
+        />
+        {!hydrated ? (
+          // Neutral placeholder until we know whether the visitor has claimed.
+          <span aria-hidden className="min-h-14" />
+        ) : claimedPersonId ? (
+          <button
+            onClick={openAddConnection}
+            aria-label="Add connection"
+            className="flex min-h-14 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium text-slate-200"
+          >
+            <span
+              aria-hidden
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30"
+            >
+              <PlusIcon />
+            </span>
+            Add
+          </button>
+        ) : (
+          <button
+            onClick={openClaimInfo}
+            aria-haspopup="dialog"
+            aria-label="Claim your profile to add connections"
+            className="flex min-h-14 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium text-indigo-200"
+          >
+            <span
+              aria-hidden
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-200 ring-1 ring-indigo-400/40"
+            >
+              <LockIcon />
+            </span>
+            Claim profile
+          </button>
+        )}
+        <BarButton
+          label="Filters"
+          onClick={() => {
+            setSearchOpen(false);
+            setFilterSheetOpen(true);
+          }}
+          expanded={filterSheetOpen}
+          icon={
+            <span className="relative">
+              <FilterIcon />
+              {filterCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-semibold text-white">
+                  {filterCount}
+                </span>
+              )}
+            </span>
+          }
+        />
+      </nav>
     </main>
+  );
+}
+
+function BarButton({
+  label,
+  icon,
+  onClick,
+  pressed,
+  expanded,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  /** For toggles (Search). */
+  pressed?: boolean;
+  /** For buttons that open a sheet (Filters). */
+  expanded?: boolean;
+}) {
+  const active = pressed || expanded;
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
+      aria-haspopup={expanded === undefined ? undefined : "dialog"}
+      className={`flex min-h-14 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition ${
+        active ? "text-indigo-300" : "text-slate-300 hover:text-white"
+      }`}
+    >
+      <span aria-hidden className="flex h-6 items-center">
+        {icon}
+      </span>
+      {label}
+    </button>
+  );
+}
+
+const ICON_PROPS = {
+  width: 20,
+  height: 20,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+} as const;
+
+function ExploreIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m15.5 8.5-2 5-5 2 2-5z" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg {...ICON_PROPS} width={22} height={22}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+/** Viewport-level explanation of how an unclaimed visitor claims a profile. */
+function ClaimInfo({ onClose }: { onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true });
+  }, []);
+  useEscapeToClose(onClose);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 pt-[max(1rem,env(safe-area-inset-top))] sm:items-center sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="claim-info-title"
+        className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-slate-900 shadow-2xl sm:max-w-sm sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 py-2 pr-2 pl-5">
+          <h2 id="claim-info-title" className="text-lg font-semibold">
+            Claim your profile
+          </h2>
+          <button
+            ref={closeRef}
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4 text-sm leading-relaxed text-slate-300">
+          <p>
+            Circle is invite-only. To claim your profile, open the personal
+            invite link you received.
+          </p>
+          <p className="text-slate-400">
+            Once your profile is claimed, you can add connections and confirm
+            the ones other people propose. Until then you can explore the map.
+          </p>
+        </div>
+        <div className="shrink-0 border-t border-white/10 px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3">
+          <button
+            onClick={onClose}
+            className="min-h-11 w-full rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -612,30 +970,53 @@ function CategoryPicker({
   onPick: (category: Category | null) => void;
   onCancel: () => void;
 }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the close control on open and cancel on Escape.
+  useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true });
+  }, []);
+  useEscapeToClose(onCancel);
+
   return (
     <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onCancel}
     >
       <div
-        className="max-h-[85vh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-picker-title"
+        className="flex max-h-[85dvh] w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-sm text-slate-400">
-          {current ? "Update connection" : "Connect"}
-        </p>
-        <h3 className="mt-1 text-lg font-semibold">
-          {aName} &amp; {bName}
-        </h3>
-        <p className="mt-1 text-xs text-slate-500">
-          How well do they know each other?
-        </p>
-        <div className="mt-4 space-y-2">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-white/10 py-3 pr-2 pl-5">
+          <div className="min-w-0 pt-1">
+            <p className="text-sm text-slate-400">
+              {current ? "Update connection" : "Connect"}
+            </p>
+            <h3 id="category-picker-title" className="mt-1 text-lg font-semibold">
+              {aName} &amp; {bName}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              How well do they know each other?
+            </p>
+          </div>
+          <button
+            ref={closeRef}
+            onClick={onCancel}
+            aria-label="Close"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none text-slate-400 transition hover:bg-white/10 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-5 py-4">
           {CATEGORY_OPTIONS.map((o) => (
             <button
               key={o.value}
               onClick={() => onPick(isCategory(o.value) ? o.value : null)}
-              className={`w-full rounded-lg px-3 py-2 text-left transition ${
+              className={`min-h-11 w-full rounded-lg px-3 py-2 text-left transition ${
                 current === o.value
                   ? "bg-indigo-500 text-white"
                   : "bg-white/5 text-slate-200 hover:bg-white/10"
@@ -652,18 +1033,18 @@ function CategoryPicker({
             </button>
           ))}
         </div>
-        <div className="mt-4 flex gap-2">
+        <div className="flex shrink-0 gap-2 border-t border-white/10 px-5 py-3">
           {current && (
             <button
               onClick={() => onPick(null)}
-              className="flex-1 rounded-lg border border-rose-500/40 px-3 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10"
+              className="min-h-11 flex-1 rounded-lg border border-rose-500/40 px-3 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10"
             >
               Remove
             </button>
           )}
           <button
             onClick={onCancel}
-            className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/20"
+            className="min-h-11 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/20"
           >
             Cancel
           </button>
@@ -673,31 +1054,3 @@ function CategoryPicker({
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="flex items-center gap-1">
-      <span className="sr-only">Filter by {label}</span>
-      <select
-        aria-label={`Filter by ${label}`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 rounded bg-white/10 px-2 py-1 text-base text-slate-200 sm:min-h-0 sm:text-xs"
-      >
-        <option value="">All {label.toLowerCase()}s</option>
-        {options.map((option) => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
-    </label>
-  );
-}

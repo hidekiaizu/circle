@@ -33,15 +33,19 @@ export default function ConfirmDialog({
   useEffect(() => {
     confirmRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
+      if (e.key === "Escape") {
+        // Claim Escape (capture phase) so a panel behind the dialog stays open.
+        e.preventDefault();
+        onCancel();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onCancel]);
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onCancel}
     >
       <div
@@ -49,7 +53,7 @@ export default function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
-        className="max-h-[85vh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"
+        className="max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="confirm-title" className="text-lg font-semibold">
@@ -61,14 +65,14 @@ export default function ConfirmDialog({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/20"
+            className="min-h-11 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/20"
           >
             {cancelLabel}
           </button>
           <button
             ref={confirmRef}
             onClick={onConfirm}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white transition ${
+            className={`min-h-11 flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white transition ${
               destructive
                 ? "bg-rose-500 hover:bg-rose-400"
                 : "bg-indigo-500 hover:bg-indigo-400"
