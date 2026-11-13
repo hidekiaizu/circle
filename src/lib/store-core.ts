@@ -362,18 +362,27 @@ export function removeRelationship(
   data: GraphData,
   relationshipId: string,
 ): GraphData {
-  if (
-    !data.relationships.some(
-      (relationship) => relationship.id === relationshipId,
-    )
-  ) {
-    return data;
-  }
+  const removed = data.relationships.find(
+    (relationship) => relationship.id === relationshipId,
+  );
+  if (!removed) return data;
+
+  const relationships = data.relationships.filter(
+    (relationship) => relationship.id !== relationshipId,
+  );
+  // Mirror the server: an unclaimed endpoint left with no connections is deleted.
+  const orphaned = (person: Person) =>
+    !person.claimed &&
+    (person.id === removed.personAId || person.id === removed.personBId) &&
+    !relationships.some(
+      (relationship) =>
+        relationship.personAId === person.id ||
+        relationship.personBId === person.id,
+    );
 
   return {
     ...data,
-    relationships: data.relationships.filter(
-      (relationship) => relationship.id !== relationshipId,
-    ),
+    people: data.people.filter((person) => !orphaned(person)),
+    relationships,
   };
 }

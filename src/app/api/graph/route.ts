@@ -83,7 +83,15 @@ export async function POST(request: Request) {
     } else if (action === "deleteRelationship") {
       const r = await db.relationship.findUnique({ where: { id: body.id } });
       if (!r || (r.personAId !== owner && r.personBId !== owner)) return deny();
-      await db.relationship.delete({ where: { id: r.id } });
+      const other = r.personAId === owner ? r.personBId : r.personAId;
+      await db.$transaction(async tx => {
+        await tx.relationship.delete({ where: { id: r.id } });
+        // An unclaimed profile with no remaining connections can never be invited, so drop it.
+        await tx.person.deleteMany({ where: {
+          id: other, account: null,
+          relationshipsAsA: { none: {} }, relationshipsAsB: { none: {} },
+        } });
+      });
     } else return bad();
     return Response.json({ ok: true });
   } catch {

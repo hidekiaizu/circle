@@ -87,7 +87,6 @@ src/
     store-core.ts       Pure graph operations + computeStrength
     GraphStore.tsx      React context + authenticated API synchronization
     server/             database and session helpers
-    supabase/           legacy row mapping and repository tests
     selectors.ts        profile options, colors, filters
 prisma/
   schema.prisma         relational model

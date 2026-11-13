@@ -21,6 +21,13 @@ function peopleNamed(...names: string[]): GraphData {
   return names.reduce((graph, name) => addPerson(graph, name), emptyGraph);
 }
 
+function claimedAll(graph: GraphData): GraphData {
+  return {
+    ...graph,
+    people: graph.people.map((person) => ({ ...person, claimed: true })),
+  };
+}
+
 describe("addPerson", () => {
   it("adds an unclaimed person with an id, timestamp, and claim token", () => {
     const graph = addPerson(emptyGraph, "Alice");
@@ -333,7 +340,7 @@ describe("relationship updates", () => {
   });
 
   it("removes only a matching relationship", () => {
-    let graph = peopleNamed("Alice", "Bob");
+    let graph = claimedAll(peopleNamed("Alice", "Bob"));
     const [aliceId, bobId] = graph.people.map((person) => person.id);
     graph = addRelationship(graph, aliceId, bobId, CATEGORY.Friend);
     const next = removeRelationship(graph, graph.relationships[0].id);
@@ -341,6 +348,28 @@ describe("relationship updates", () => {
     expect(next.relationships).toHaveLength(0);
     expect(next.people).toHaveLength(2);
     expect(removeRelationship(graph, "missing")).toBe(graph);
+  });
+
+  it("drops an unclaimed endpoint left with no connections", () => {
+    let graph = claimedAll(peopleNamed("Alice"));
+    graph = addPerson(graph, "Ghost");
+    const [aliceId, ghostId] = graph.people.map((person) => person.id);
+    graph = addRelationship(graph, aliceId, ghostId, CATEGORY.Friend);
+    const next = removeRelationship(graph, graph.relationships[0].id);
+
+    expect(next.people.map((person) => person.id)).toEqual([aliceId]);
+  });
+
+  it("keeps an unclaimed endpoint that still has other connections", () => {
+    let graph = claimedAll(peopleNamed("Alice", "Bob"));
+    graph = addPerson(graph, "Ghost");
+    const [aliceId, bobId, ghostId] = graph.people.map((person) => person.id);
+    graph = addRelationship(graph, aliceId, ghostId, CATEGORY.Friend);
+    graph = addRelationship(graph, bobId, ghostId, CATEGORY.Friend);
+    const next = removeRelationship(graph, graph.relationships[0].id);
+
+    expect(next.people).toHaveLength(3);
+    expect(next.relationships).toHaveLength(1);
   });
 });
 
